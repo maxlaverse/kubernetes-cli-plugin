@@ -27,7 +27,7 @@
     </developer>
   </developers>
 
-  <url>https://wiki.jenkins.io/display/JENKINS/Kubernetes+Credentials+Plugin</url>
+  <url>https://wiki.jenkins.io/display/JENKINS/Kubernetes+Cli+Plugin</url>
 
   <properties>
     <java.level>8</java.level>
@@ -76,6 +76,16 @@
       <groupId>org.jenkinsci.plugins</groupId>
       <artifactId>kubernetes-credentials</artifactId>
       <version>${jenkins-kubernetes-credentials.version}</version>
+    </dependency><dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>plain-credentials</artifactId>
+      <version>${jenkins-plain-credentials.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jenkins-ci.plugins.workflow</groupId>
+      <artifactId>workflow-step-api</artifactId>
+      <version>${jenkins-workflow-step-api.version}</version>
     </dependency>
 
 
