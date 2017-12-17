@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-0.0.1-SNAPSHOT
+0.1.0
 -----
 * Import authentication feature from the kubernetes plugin
 * Add support for StringCredentials
