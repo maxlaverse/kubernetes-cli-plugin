@@ -161,4 +161,18 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "aHVkT1NSQis5YzRYWFNFTzUKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQ=="));
 
     }
+
+    @Test
+    public void testKubeConfigPathWithSpace() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential());
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "kubectl path with spaces");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpKubeConfigPath.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        r.assertLogContains("kubectl configuration cleaned up", b);
+        r.assertLogContains("/workspace/kubectl path with spaces/.kube", b);
+    }
 }
