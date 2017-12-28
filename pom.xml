@@ -89,13 +89,6 @@
       <version>${jenkins-workflow-step-api.version}</version>
     </dependency>
 
-
-    <dependency>
-      <groupId>org.jenkins-ci.plugins.workflow</groupId>
-      <artifactId>workflow-step-api</artifactId>
-      <version>${jenkins-workflow-step-api.version}</version>
-    </dependency>
-
     <!-- for testing -->
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
