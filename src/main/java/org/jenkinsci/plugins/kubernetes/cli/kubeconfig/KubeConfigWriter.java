@@ -95,9 +95,9 @@ public class KubeConfigWriter {
 
         try {
             int status = launcher.launch()
-                    .cmdAsSingleString(String.format("%s config --kubeconfig=\"%s\" set-cluster %s --server=%s %s",
+                    .envs(String.format("KUBECONFIG=%s", configFile))
+                    .cmdAsSingleString(String.format("%s config set-cluster %s --server=%s %s",
                             KUBECTL_BINARY,
-                            configFile,
                             CLUSTERNAME,
                             serverUrl,
                             tlsConfigArgs))
@@ -145,13 +145,13 @@ public class KubeConfigWriter {
             throw new AbortException("Unsupported Credentials type " + credentials.getClass().getName());
         }
 
-        String[] cmds = QuotedStringTokenizer.tokenize(String.format("%s config --kubeconfig=\"%s\" set-credentials %s %s",
+        String[] cmds = QuotedStringTokenizer.tokenize(String.format("%s config set-credentials %s %s",
                 KUBECTL_BINARY,
-                configFile,
                 USERNAME,
                 credentialsArgs));
 
         int status = launcher.launch()
+                .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmds(cmds)
                 .masks(getMasks(cmds.length, sensitiveFieldsCount))
                 .stdout(launcher.getListener())
@@ -173,9 +173,9 @@ public class KubeConfigWriter {
     private void setContext(String configFile) throws IOException, InterruptedException {
         // Add the context
         int status = launcher.launch()
-                .cmdAsSingleString(String.format("%s config --kubeconfig=\"%s\" set-context %s --cluster=%s --user=%s",
+                .envs(String.format("KUBECONFIG=%s", configFile))
+                .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
                         KUBECTL_BINARY,
-                        configFile,
                         CONTEXTNAME,
                         CLUSTERNAME,
                         USERNAME))
@@ -185,9 +185,9 @@ public class KubeConfigWriter {
 
         // Set the default context
         status = launcher.launch()
-                .cmdAsSingleString(String.format("%s config --kubeconfig=\"%s\" use-context %s",
+                .envs(String.format("KUBECONFIG=%s", configFile))
+                .cmdAsSingleString(String.format("%s config use-context %s",
                         KUBECTL_BINARY,
-                        configFile,
                         CONTEXTNAME))
                 .stdout(launcher.getListener())
                 .join();
