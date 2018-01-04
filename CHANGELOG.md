@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.0.0
+-----
+* Fix sporadic execution error when running kubectl concurrently
+
 0.1.0
 -----
 * Import authentication feature from the kubernetes plugin
