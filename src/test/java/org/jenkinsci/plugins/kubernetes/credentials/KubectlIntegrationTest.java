@@ -86,6 +86,22 @@ public class KubectlIntegrationTest extends KubectlTestBase {
     }
 
     @Test
+    public void testFileCredentials() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential());
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertTrue(configDumpContent.contains("apiVersion: v1\nclusters:"));
+    }
+
+    @Test
     public void testSecretCredentials() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredentialWithSpace());
 
