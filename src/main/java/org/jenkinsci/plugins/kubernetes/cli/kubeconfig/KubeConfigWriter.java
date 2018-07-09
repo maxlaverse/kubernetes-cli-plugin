@@ -13,10 +13,13 @@ import hudson.util.QuotedStringTokenizer;
 import hudson.util.Secret;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
+import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Set;
 
@@ -141,6 +144,14 @@ public class KubeConfigWriter {
             tempFiles.add(clientKeyFile.getRemote());
             credentialsArgs = "--embed-certs=true --client-certificate=" + clientCrtFile.getRemote() + " --client-key="
                     + clientKeyFile.getRemote();
+        } else if (credentials instanceof FileCredentials) {
+            InputStream configStream = ((FileCredentials) credentials).getContent();
+            try {
+                org.apache.commons.io.IOUtils.copy(configStream, new PrintWriter(configFile, "UTF-8"));
+            } finally {
+                configStream.close();
+            }
+            return;
         } else {
             throw new AbortException("Unsupported Credentials type " + credentials.getClass().getName());
         }

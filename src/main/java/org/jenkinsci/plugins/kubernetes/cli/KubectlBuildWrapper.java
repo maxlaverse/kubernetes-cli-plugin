@@ -22,6 +22,7 @@ import jenkins.tasks.SimpleBuildWrapper;
 import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriter;
 import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriterFactory;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
+import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -79,7 +80,8 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
                 CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
                 CredentialsMatchers.instanceOf(TokenProducer.class),
                 CredentialsMatchers.instanceOf(StringCredentials.class),
-                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class)
+                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
+                CredentialsMatchers.instanceOf(FileCredentials.class)
         );
 
         @Override

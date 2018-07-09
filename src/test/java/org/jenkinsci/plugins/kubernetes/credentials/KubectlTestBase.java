@@ -1,12 +1,15 @@
 package org.jenkinsci.plugins.kubernetes.credentials;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.model.Slave;
 import hudson.util.Secret;
 import org.apache.commons.compress.utils.IOUtils;
+import org.jenkinsci.plugins.plaincredentials.FileCredentials;
+import org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.jvnet.hudson.test.FakeLauncher;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -100,5 +103,9 @@ public class KubectlTestBase {
 
     protected BaseStandardCredentials usernamePasswordCredentialWithSpace() {
         return new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, CREDENTIAL_ID, "sample", USERNAME_WITH_SPACE, PASSWORD_WITH_SPACE);
+    }
+
+    protected FileCredentials fileCredential() {
+        return new FileCredentialsImpl(CredentialsScope.GLOBAL, CREDENTIAL_ID, "sample","file-name", SecretBytes.fromString("apiVersion: v1\nclusters:"));
     }
 }
