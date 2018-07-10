@@ -11,6 +11,7 @@ Initially extracted and rewritten from the [Kubernetes Plugin][kubernetes-plugin
 The following types of credentials are supported and can be used to authenticate against Kubernetes clusters:
 * Username and Password (see [Credentials plugin][credentials-plugin])
 * Certificates (see [Credentials plugin][credentials-plugin])
+* Plain KubeConfig files (see [Plain Credentials plugin][plain-credentials-plugin])
 * Token, as secrets (see [Plain Credentials plugin][plain-credentials-plugin])
 * OpenShift tokens, as secrets (see [Kubernetes Credentials plugin][kubernetes-credentials-plugin])
 
