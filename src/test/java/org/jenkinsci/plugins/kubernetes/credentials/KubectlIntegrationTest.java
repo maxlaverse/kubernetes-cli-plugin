@@ -13,8 +13,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.Base64;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -98,7 +97,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertTrue(configDumpContent.contains("apiVersion: v1\nclusters:"));
+        assertEquals("---\napiVersion: v1\nclusters:\n- cluster:\n  name: test-sample", configDumpContent);
     }
 
     @Test

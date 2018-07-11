@@ -17,6 +17,7 @@ import org.jvnet.hudson.test.PretendSlave;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -105,7 +106,7 @@ public class KubectlTestBase {
         return new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, CREDENTIAL_ID, "sample", USERNAME_WITH_SPACE, PASSWORD_WITH_SPACE);
     }
 
-    protected FileCredentials fileCredential() {
-        return new FileCredentialsImpl(CredentialsScope.GLOBAL, CREDENTIAL_ID, "sample","file-name", SecretBytes.fromString("apiVersion: v1\nclusters:"));
+    protected FileCredentials fileCredential() throws UnsupportedEncodingException {
+        return new FileCredentialsImpl(CredentialsScope.GLOBAL, CREDENTIAL_ID, "sample", "file-name", SecretBytes.fromBytes("---\napiVersion: v1\nclusters:\n- cluster:\n  name: test-sample\n".getBytes("UTF-8")));
     }
 }

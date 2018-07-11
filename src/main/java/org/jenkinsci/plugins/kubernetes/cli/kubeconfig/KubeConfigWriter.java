@@ -11,6 +11,7 @@ import hudson.Launcher;
 import hudson.model.Run;
 import hudson.util.QuotedStringTokenizer;
 import hudson.util.Secret;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
 import org.jenkinsci.plugins.plaincredentials.FileCredentials;
@@ -18,8 +19,6 @@ import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Set;
 
@@ -68,11 +67,26 @@ public class KubeConfigWriter {
 
         FilePath configFile = workspace.createTempFile(".kube", "config");
 
-        setCluster(configFile.getRemote());
-        setCredentials(configFile.getRemote());
-        setContext(configFile.getRemote());
+        final StandardCredentials credentials = getCredentials(build);
+        if (credentials instanceof FileCredentials) {
+            setRawKubeConfig(configFile, (FileCredentials) credentials);
+        } else {
+            setCluster(configFile.getRemote());
+            setCredentials(configFile.getRemote(), credentials);
+            setContext(configFile.getRemote());
+        }
 
         return configFile.getRemote();
+    }
+
+    /**
+     * Set the whole kube configuration file from a FileCredentials.
+     *
+     * @throws IOException          on file operations
+     * @throws InterruptedException on file operations
+     */
+    private void setRawKubeConfig(FilePath configFile, FileCredentials credentials) throws IOException, InterruptedException {
+        IOUtils.copy(credentials.getContent(), configFile.write());
     }
 
     /**
@@ -120,9 +134,8 @@ public class KubeConfigWriter {
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
-    private void setCredentials(String configFile) throws IOException, InterruptedException {
+    private void setCredentials(String configFile, StandardCredentials credentials) throws IOException, InterruptedException {
         Set<String> tempFiles = newHashSet();
-        final StandardCredentials credentials = getCredentials(build);
 
         String credentialsArgs;
         int sensitiveFieldsCount = 1;
@@ -144,14 +157,6 @@ public class KubeConfigWriter {
             tempFiles.add(clientKeyFile.getRemote());
             credentialsArgs = "--embed-certs=true --client-certificate=" + clientCrtFile.getRemote() + " --client-key="
                     + clientKeyFile.getRemote();
-        } else if (credentials instanceof FileCredentials) {
-            InputStream configStream = ((FileCredentials) credentials).getContent();
-            try {
-                org.apache.commons.io.IOUtils.copy(configStream, new PrintWriter(configFile, "UTF-8"));
-            } finally {
-                configStream.close();
-            }
-            return;
         } else {
             throw new AbortException("Unsupported Credentials type " + credentials.getClass().getName());
         }
