@@ -97,7 +97,44 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertEquals("---\napiVersion: v1\nclusters:\n- cluster:\n  name: test-sample", configDumpContent);
+        assertEquals("---\n" +
+                "apiVersion: v1\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "  name: test-sample\n" +
+                "- context:\n" +
+                "  name: k8s\n" +
+                "current-context: minikube", configDumpContent);
+    }
+
+    @Test
+    public void testFileCredentialsWithContext() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithContext.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertEquals("apiVersion: v1\n" +
+                "clusters: []\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"\"\n" +
+                "    user: \"\"\n" +
+                "  name: k8s\n" +
+                "- context:\n" +
+                "    cluster: \"\"\n" +
+                "    user: \"\"\n" +
+                "  name: test-sample\n" +
+                "current-context: test-sample\n" +
+                "kind: Config\n" +
+                "preferences: {}\n" +
+                "users: []", configDumpContent);
     }
 
     @Test

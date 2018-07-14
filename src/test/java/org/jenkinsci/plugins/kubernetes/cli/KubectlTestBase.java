@@ -108,11 +108,22 @@ public class KubectlTestBase {
         return new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", USERNAME_WITH_SPACE, PASSWORD_WITH_SPACE);
     }
 
-    protected FileCredentials fileCredential(String credentialId) throws UnsupportedEncodingException {
-        return new FileCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", "file-name", SecretBytes.fromBytes("---\napiVersion: v1\nclusters:\n- cluster:\n  name: test-sample\n".getBytes("UTF-8")));
-    }
-
     protected OpenShiftBearerTokenCredentialImpl tokenCredential(String credentialId) {
         return new OpenShiftBearerTokenCredentialImpl(CredentialsScope.GLOBAL, credentialId, "a-description", USERNAME, PASSWORD);
+    }
+
+    protected FileCredentials fileCredential(String credentialId) throws UnsupportedEncodingException {
+        return new FileCredentialsImpl(CredentialsScope.GLOBAL,
+                credentialId,
+                "sample",
+                "file-name",
+                SecretBytes.fromBytes(("---\n" +
+                        "apiVersion: v1\n" +
+                        "contexts:\n" +
+                        "- context:\n" +
+                        "  name: test-sample\n" +
+                        "- context:\n" +
+                        "  name: k8s\n" +
+                        "current-context: minikube\n").getBytes("UTF-8")));
     }
 }
