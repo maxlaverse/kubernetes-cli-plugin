@@ -11,6 +11,7 @@ cache:
 
 env:
   - KUBECTL_VERSION=v1.9.6
+  - KUBECTL_VERSION=v1.8.15
 
 install:
 - curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl
