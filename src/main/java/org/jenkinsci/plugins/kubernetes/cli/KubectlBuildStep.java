@@ -45,6 +45,9 @@ public class KubectlBuildStep extends Step {
     @DataBoundSetter
     public String caCertificate;
 
+    @DataBoundSetter
+    public String contextName;
+
     @DataBoundConstructor
     public KubectlBuildStep() {
     }
@@ -73,6 +76,7 @@ public class KubectlBuildStep extends Step {
                     step.serverUrl,
                     step.credentialsId,
                     step.caCertificate,
+                    step.contextName,
                     getContext());
 
             // Write config

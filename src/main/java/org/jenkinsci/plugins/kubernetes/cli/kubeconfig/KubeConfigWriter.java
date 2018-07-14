@@ -32,24 +32,26 @@ public class KubeConfigWriter {
 
     private static final String KUBECTL_BINARY = "kubectl";
     private static final String USERNAME = "cluster-admin";
-    private static final String CONTEXTNAME = "k8s";
+    private static final String DEFAULT_CONTEXTNAME = "k8s";
     private static final String CLUSTERNAME = "k8s";
 
     private final String serverUrl;
     private final String credentialsId;
     private final String caCertificate;
+    private final String contextName;
     private final FilePath workspace;
     private final Launcher launcher;
     private final Run<?, ?> build;
 
     public KubeConfigWriter(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                            @Nonnull String caCertificate, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                            @Nonnull String caCertificate, @Nonnull String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         this.serverUrl = serverUrl;
         this.credentialsId = credentialsId;
         this.caCertificate = caCertificate;
         this.workspace = workspace;
         this.launcher = launcher;
         this.build = build;
+        this.contextName = contextName;
     }
 
     /**
@@ -70,11 +72,17 @@ public class KubeConfigWriter {
         final StandardCredentials credentials = getCredentials(build);
         if (credentials instanceof FileCredentials) {
             setRawKubeConfig(configFile, (FileCredentials) credentials);
+            if (wasContextProvided()) {
+                useContext(configFile.getRemote(), this.contextName);
+            }
+            //Log warning if server rprovided
         } else {
             setCluster(configFile.getRemote());
             setCredentials(configFile.getRemote(), credentials);
-            setContext(configFile.getRemote());
+            setContext(configFile.getRemote(), this.getContextNameOrDefault());
+            useContext(configFile.getRemote(), this.getContextNameOrDefault());
         }
+
 
         return configFile.getRemote();
     }
@@ -186,25 +194,32 @@ public class KubeConfigWriter {
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
-    private void setContext(String configFile) throws IOException, InterruptedException {
+    private void setContext(String configFile, String contextName) throws IOException, InterruptedException {
         // Add the context
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
                         KUBECTL_BINARY,
-                        CONTEXTNAME,
+                        contextName,
                         CLUSTERNAME,
                         USERNAME))
                 .stdout(launcher.getListener())
                 .join();
         if (status != 0) throw new IOException("Failed to add kubectl context (exit code  " + status + ")");
+    }
 
-        // Set the default context
-        status = launcher.launch()
+    /**
+     * Set the current context of the kube configuration file.
+     *
+     * @throws IOException          on file operations
+     * @throws InterruptedException on file operations
+     */
+    private void useContext(String configFile, String contextName) throws IOException, InterruptedException {
+        int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config use-context %s",
                         KUBECTL_BINARY,
-                        CONTEXTNAME))
+                        contextName))
                 .stdout(launcher.getListener())
                 .join();
 
@@ -243,4 +258,26 @@ public class KubeConfigWriter {
         }
         return result;
     }
+
+    /**
+     * Return whether or not a contexName was provided
+     *
+     * @return true if a contextName was provided to the plugin.
+     */
+    private boolean wasContextProvided() {
+        return this.contextName != null && !this.contextName.isEmpty();
+    }
+
+    /**
+     * Returns a contextName
+     *
+     * @return contextName if provided, else the default value.
+     */
+    private String getContextNameOrDefault() {
+        if (!wasContextProvided()) {
+            return DEFAULT_CONTEXTNAME;
+        }
+        return this.contextName;
+    }
+
 }
