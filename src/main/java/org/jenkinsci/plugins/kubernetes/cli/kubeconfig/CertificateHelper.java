@@ -53,17 +53,11 @@ public abstract class CertificateHelper {
     }
 
     public static String wrapPrivateKey(String encodedBody) {
-        return new StringBuilder(BEGIN_PRIVATE_KEY).append("\n")
-                .append(encodedBody).append("\n")
-                .append(END_PRIVATE_KEY)
-                .toString();
+        return wrapWithMarker(BEGIN_PRIVATE_KEY, END_PRIVATE_KEY, encodedBody);
     }
 
     public static String wrapCertificate(String encodedBody) {
-        return new StringBuilder(BEGIN_CERTIFICATE).append("\n")
-                .append(encodedBody).append("\n")
-                .append(END_CERTIFICATE)
-                .toString();
+        return wrapWithMarker(BEGIN_CERTIFICATE, END_CERTIFICATE, encodedBody);
     }
 
     private static String wrapWithMarker(String begin, String end, String encodedBody) {
