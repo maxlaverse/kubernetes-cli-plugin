@@ -22,4 +22,14 @@ public class KubeConfigExpanderTest {
         expander.expand(initialEnv);
         assertEquals("a-file-path", initialEnv.get("KUBECONFIG"));
     }
+
+    @Test
+    public void testExpanderHeritate() throws Exception {
+        KubeConfigExpander expander = new KubeConfigExpander("a-file-path");
+        EnvVars initialEnv = new EnvVars();
+        initialEnv.put("KUBECONFIG", "a-wrong-path");
+        initialEnv.put("ANOTHER", "value");
+        expander.expand(initialEnv);
+        assertEquals("value", initialEnv.get("ANOTHER"));
+    }
 }
