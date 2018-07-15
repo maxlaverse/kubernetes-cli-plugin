@@ -55,7 +55,7 @@ public class KubectlTestBase {
             if (p.cmds().get(0).equals(KUBECTL_BINARY)) {
                 String[] maskedCmd = getMaskedCmd(p.cmds(), p.masks());
                 PrintStream ps = new PrintStream(p.stdout());
-                ps.println("Call stubbed for: " + String.join(", ", maskedCmd));
+                ps.println("Call stubbed for: " + String.join(", ", maskedCmd)+" with env: " + String.join(",",p.envs()));
                 return new FakeLauncher.FinishedProc(0);
             }
             return r.createLocalLauncher().launch(p);

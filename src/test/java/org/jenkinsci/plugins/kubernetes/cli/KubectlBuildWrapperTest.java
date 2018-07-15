@@ -10,6 +10,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.io.File;
+
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -27,7 +29,24 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
     }
 
     @Test
-    public void testFreeStyleProject() throws Exception {
+    public void testEnvVariablePresent() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredential());
+
+        FreeStyleProject p = r.createFreeStyleProject();
+
+        KubectlBuildWrapper bw = new KubectlBuildWrapper();
+        bw.credentialsId = secretCredential().getId();
+        p.getBuildWrappersList().add(bw);
+
+
+        FreeStyleBuild b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
+        r.assertLogContains("KUBECONFIG=" + b.getWorkspace() + File.separator + ".kube", b);
+    }
+
+    @Test
+    public void testKubeConfigDisposed() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredential());
 
         FreeStyleProject p = r.createFreeStyleProject();
@@ -42,5 +61,4 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
         r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
         r.assertLogContains("kubectl configuration cleaned up", b);
     }
-
 }
