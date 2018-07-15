@@ -78,4 +78,16 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         r.assertLogNotContains("with-passwordspace", b);
         r.assertLogNotContains("s3cr3t", b);
     }
+
+    @Test
+    public void testKubeConfigDisposed() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace());
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordWithSpace");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+        r.assertLogContains("kubectl configuration cleaned up", b);
+    }
 }
