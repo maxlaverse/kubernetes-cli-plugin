@@ -1,6 +1,5 @@
-package org.jenkinsci.plugins.kubernetes.credentials.kubeconfig;
+package org.jenkinsci.plugins.kubernetes.cli.kubeconfig;
 
-import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.CertificateHelper;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

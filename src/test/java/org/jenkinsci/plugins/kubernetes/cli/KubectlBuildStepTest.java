@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.kubernetes.credentials;
+package org.jenkinsci.plugins.kubernetes.cli;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author Max Laverse
  */
-public class KubectlBuildWrapperStepTest extends KubectlTestBase {
+public class KubectlBuildStepTest extends KubectlTestBase {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
@@ -77,5 +77,17 @@ public class KubectlBuildWrapperStepTest extends KubectlTestBase {
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
         r.assertLogNotContains("with-passwordspace", b);
         r.assertLogNotContains("s3cr3t", b);
+    }
+
+    @Test
+    public void testKubeConfigDisposed() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace());
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordWithSpace");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+        r.assertLogContains("kubectl configuration cleaned up", b);
     }
 }
