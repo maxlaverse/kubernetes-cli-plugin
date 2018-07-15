@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.kubernetes.credentials;
+package org.jenkinsci.plugins.kubernetes.cli;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
 import com.cloudbees.plugins.credentials.CredentialsProvider;

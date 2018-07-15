@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.kubernetes.credentials;
+package org.jenkinsci.plugins.kubernetes.cli;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SecretBytes;
@@ -93,7 +93,7 @@ public class KubectlTestBase {
     }
 
     protected BaseStandardCredentials certificateCredential() {
-        String storeFile = getResourceFile("/org/jenkinsci/plugins/kubernetes/credentials/kubernetes.pkcs12");
+        String storeFile = getResourceFile("/org/jenkinsci/plugins/kubernetes/cli/kubernetes.pkcs12");
         CertificateCredentialsImpl.KeyStoreSource keyStoreSource = new CertificateCredentialsImpl.FileOnMasterKeyStoreSource(storeFile);
         return new CertificateCredentialsImpl(CredentialsScope.GLOBAL, CREDENTIAL_ID, "sample", PASSPHRASE, keyStoreSource);
     }

@@ -1,3 +1,5 @@
+package org.jenkinsci.plugins.kubernetes.cli
+
 node{
   label "mocked-kubectl"
   stage('Run') {
