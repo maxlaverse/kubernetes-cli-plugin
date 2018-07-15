@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author Max Laverse
  */
-public class KubectlBuildWrapperStepTest extends KubectlTestBase {
+public class KubectlBuildStepTest extends KubectlTestBase {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
