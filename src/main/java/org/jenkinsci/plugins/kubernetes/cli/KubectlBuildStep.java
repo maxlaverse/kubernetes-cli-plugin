@@ -17,6 +17,7 @@ import hudson.util.ListBoxModel;
 import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriter;
 import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriterFactory;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
+import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.AncestorInPath;
@@ -125,7 +126,8 @@ public class KubectlBuildStep extends Step {
                 CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
                 CredentialsMatchers.instanceOf(TokenProducer.class),
                 CredentialsMatchers.instanceOf(StringCredentials.class),
-                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class)
+                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
+                CredentialsMatchers.instanceOf(FileCredentials.class)
         );
 
         /**
