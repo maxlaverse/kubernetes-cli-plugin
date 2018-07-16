@@ -108,7 +108,6 @@ public class KubectlBuildStepTest extends KubectlTestBase {
     public void testUnsupportedCredential() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), unsupportedCredential(CREDENTIAL_ID));
 
-
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithUnsupportedCredentials");
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
@@ -131,5 +130,17 @@ public class KubectlBuildStepTest extends KubectlTestBase {
 
         ListBoxModel s = d.doFillCredentialsIdItems(p.asItem(), "");
         assertEquals(6, s.size());
+    }
+
+    @Test
+    public void testInvalidCertificate() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), brokenCertificateCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithBrokenCertificate");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        r.assertLogContains("ERROR: Uninitialized keystore", b);
     }
 }

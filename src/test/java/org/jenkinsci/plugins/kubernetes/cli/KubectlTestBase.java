@@ -101,6 +101,12 @@ public class KubectlTestBase {
         return new CertificateCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", PASSPHRASE, keyStoreSource);
     }
 
+    protected BaseStandardCredentials brokenCertificateCredential(String credentialId) {
+        String storeFile = getResourceFile("/org/jenkinsci/plugins/kubernetes/cli/kubernetes.pkcs12");
+        CertificateCredentialsImpl.KeyStoreSource keyStoreSource = new CertificateCredentialsImpl.FileOnMasterKeyStoreSource(storeFile);
+        return new CertificateCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", "bad-passphrase", keyStoreSource);
+    }
+
     protected BaseStandardCredentials usernamePasswordCredential(String credentialId) {
         return new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", USERNAME, PASSWORD);
     }
