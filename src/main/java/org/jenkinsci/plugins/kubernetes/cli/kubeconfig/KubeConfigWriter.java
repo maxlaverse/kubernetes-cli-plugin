@@ -78,7 +78,7 @@ public class KubeConfigWriter {
             if (wasContextProvided()) {
                 useContext(configFile.getRemote(), this.contextName);
             }
-            if(this.wasServerUrlProvided()){
+            if (this.wasServerUrlProvided()) {
                 launcher.getListener().getLogger().println("the serverUrl will be ignored as a raw kubeconfig file was provided");
             }
         } else {
@@ -99,9 +99,9 @@ public class KubeConfigWriter {
      * @throws InterruptedException on file operations
      */
     private void setRawKubeConfig(FilePath configFile, FileCredentials credentials) throws IOException, InterruptedException {
-        OutputStream output = configFile.write();
-        IOUtils.copy(credentials.getContent(), output);
-        output.close();
+        try (OutputStream output = configFile.write()) {
+            IOUtils.copy(credentials.getContent(), output);
+        }
     }
 
     /**
