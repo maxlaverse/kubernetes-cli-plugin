@@ -8,7 +8,8 @@ import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.model.Slave;
 import hudson.util.Secret;
 import org.apache.commons.compress.utils.IOUtils;
-import org.jenkinsci.plugins.kubernetes.credentials.OpenShiftBearerTokenCredentialImpl;
+import org.jenkinsci.plugins.kubernetes.cli.utils.FakeBearerTokenCredentialImpl;
+import org.jenkinsci.plugins.kubernetes.cli.utils.UnsupportedCredential;
 import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -108,10 +109,6 @@ public class KubectlTestBase {
         return new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", USERNAME_WITH_SPACE, PASSWORD_WITH_SPACE);
     }
 
-    protected OpenShiftBearerTokenCredentialImpl tokenCredential(String credentialId) {
-        return new OpenShiftBearerTokenCredentialImpl(CredentialsScope.GLOBAL, credentialId, "a-description", USERNAME, PASSWORD);
-    }
-
     protected FileCredentials fileCredential(String credentialId) throws UnsupportedEncodingException {
         return new FileCredentialsImpl(CredentialsScope.GLOBAL,
                 credentialId,
@@ -125,5 +122,13 @@ public class KubectlTestBase {
                         "- context:\n" +
                         "  name: k8s\n" +
                         "current-context: minikube\n").getBytes("UTF-8")));
+    }
+
+    protected FakeBearerTokenCredentialImpl tokenCredential(String credentialId) {
+        return new FakeBearerTokenCredentialImpl(CredentialsScope.GLOBAL, credentialId, "a-description", USERNAME, PASSWORD);
+    }
+
+    protected UnsupportedCredential unsupportedCredential(String credentialId) {
+        return new UnsupportedCredential(credentialId, "sample");
     }
 }

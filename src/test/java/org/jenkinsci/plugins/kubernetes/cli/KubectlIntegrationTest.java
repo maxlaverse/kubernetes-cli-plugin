@@ -13,6 +13,8 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.Base64;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
@@ -44,8 +46,8 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertTrue(configDumpContent.contains("certificate-authority-data: " + encodedCertificate));
-        assertTrue(configDumpContent.contains("server: " + SERVER_URL));
+        assertThat(configDumpContent, containsString("certificate-authority-data: " + encodedCertificate));
+        assertThat(configDumpContent, containsString("server: " + SERVER_URL));
     }
 
     @Test
@@ -62,8 +64,8 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertTrue(configDumpContent.contains("insecure-skip-tls-verify: true"));
-        assertTrue(configDumpContent.contains("server: " + SERVER_URL));
+        assertThat(configDumpContent, containsString("insecure-skip-tls-verify: true"));
+        assertThat(configDumpContent, containsString("server: " + SERVER_URL));
     }
 
     @Test
@@ -80,8 +82,26 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertTrue(configDumpContent.contains("username: " + USERNAME_WITH_SPACE));
-        assertTrue(configDumpContent.contains("password: " + PASSWORD_WITH_SPACE));
+        assertThat(configDumpContent, containsString("username: " + USERNAME_WITH_SPACE));
+        assertThat(configDumpContent, containsString("password: " + PASSWORD_WITH_SPACE));
+    }
+
+    @Test
+    public void testNonFileCredentialsWithContext() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordCredentials");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCaWithContext.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertThat(configDumpContent, containsString("username: " + USERNAME));
+        assertThat(configDumpContent, containsString("password: " + PASSWORD));
+        assertThat(configDumpContent, containsString("current-context: test-sample"));
     }
 
     @Test
@@ -151,7 +171,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertTrue(configDumpContent.contains("token: " + PASSWORD_WITH_SPACE));
+        assertThat(configDumpContent, containsString("token: " + PASSWORD_WITH_SPACE));
     }
 
     @Test
@@ -167,7 +187,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertTrue(configDumpContent.contains("client-certificate-data: " +
+        assertThat(configDumpContent, containsString("client-certificate-data: " +
                 "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNhekNDQWRRQ0NRR" +
                 "FZ0VnhhSHZxcXR6QU5CZ2txaGtpRzl3MEJBUVVGQURCNk1Rc3dDUVlEVl" +
                 "FRR0V3SkJWVEVUTUJFR0ExVUVDQk1LVTI5dFpTMVRkR0YwWlRFUU1BNEd" +
@@ -189,7 +209,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "srK0NYbXJ6VVJ4UUpJYi9xeEdqRUM4SDR5QVU2dGs3YStoellYVWt4bnZ" +
                 "sK0F5OWc5WnBWR3Z5a1krbHlGNEJkdnlYZ2I5aGVBbGp3azRtdHRoNmdV" +
                 "eXdaRT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ=="));
-        assertTrue(configDumpContent.contains("client-key-data: " +
+        assertThat(configDumpContent, containsString("client-key-data: " +
                 "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUNkUUlCQURBTkJna" +
                 "3Foa2lHOXcwQkFRRUZBQVNDQWw4d2dnSmJBZ0VBQW9HQkFMS0ViejIrbG" +
                 "pwN3dNTEZYckdhVEZ4M25HUUE0c1dsWGtLcGdqYjYrd1U3ZTdYVDFuOHF" +
@@ -226,5 +246,21 @@ public class KubectlIntegrationTest extends KubectlTestBase {
 
         r.assertLogContains("kubectl configuration cleaned up", b);
         r.assertLogContains("/workspace/kubectl path with spaces/.kube", b);
+    }
+
+    @Test
+    public void testTokenProducer() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), tokenCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "tokenProducerCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertThat(configDumpContent, containsString("token: faketoken:bob:s3cr3t"));
     }
 }

@@ -95,6 +95,29 @@ public class KubectlBuildStepTest extends KubectlTestBase {
     }
 
     @Test
+    public void testCredentialNotProvided() throws Exception {
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithEmptyCredentials");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlWithEmptyCredential.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        r.assertLogContains("ERROR: No credentials defined to setup Kubernetes CLI", b);
+    }
+
+    @Test
+    public void testUnsupportedCredential() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), unsupportedCredential(CREDENTIAL_ID));
+
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithUnsupportedCredentials");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        r.assertLogContains("ERROR: Unsupported Credentials type org.jenkinsci.plugins.kubernetes.cli.utils.UnsupportedCredential", b);
+    }
+
+    @Test
     public void testListedCredentials() throws Exception {
         CredentialsStore store = CredentialsProvider.lookupStores(r.jenkins).iterator().next();
         store.addCredentials(Domain.global(), usernamePasswordCredential("1"));

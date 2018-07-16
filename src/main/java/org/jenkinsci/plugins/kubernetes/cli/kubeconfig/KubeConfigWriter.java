@@ -70,7 +70,9 @@ public class KubeConfigWriter {
         FilePath configFile = workspace.createTempFile(".kube", "config");
 
         final StandardCredentials credentials = getCredentials(build);
-        if (credentials instanceof FileCredentials) {
+        if (credentials == null) {
+            throw new AbortException("No credentials defined to setup Kubernetes CLI");
+        } else if (credentials instanceof FileCredentials) {
             setRawKubeConfig(configFile, (FileCredentials) credentials);
             if (wasContextProvided()) {
                 useContext(configFile.getRemote(), this.contextName);
@@ -147,9 +149,7 @@ public class KubeConfigWriter {
 
         String credentialsArgs;
         int sensitiveFieldsCount = 1;
-        if (credentials == null) {
-            throw new AbortException("No credentials defined to setup Kubernetes CLI");
-        } else if (credentials instanceof TokenProducer) {
+        if (credentials instanceof TokenProducer) {
             credentialsArgs = "--token=\"" + ((TokenProducer) credentials).getToken(serverUrl, null, true) + "\"";
         } else if (credentials instanceof StringCredentials) {
             credentialsArgs = "--token=\"" + ((StringCredentials) credentials).getSecret() + "\"";
