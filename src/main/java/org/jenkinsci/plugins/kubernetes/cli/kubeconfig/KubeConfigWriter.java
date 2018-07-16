@@ -19,6 +19,7 @@ import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -98,7 +99,9 @@ public class KubeConfigWriter {
      * @throws InterruptedException on file operations
      */
     private void setRawKubeConfig(FilePath configFile, FileCredentials credentials) throws IOException, InterruptedException {
-        IOUtils.copy(credentials.getContent(), configFile.write());
+        OutputStream output = configFile.write();
+        IOUtils.copy(credentials.getContent(), output);
+        output.close();
     }
 
     /**
