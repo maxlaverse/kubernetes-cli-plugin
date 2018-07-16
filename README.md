@@ -18,7 +18,7 @@ The following types of credentials are supported and can be used to authenticate
 * Certificates (see [Credentials plugin][credentials-plugin])
 * Plain KubeConfig files (see [Plain Credentials plugin][plain-credentials-plugin])
 * Token, as secrets (see [Plain Credentials plugin][plain-credentials-plugin])
-* OpenShift tokens, as secrets (see [Kubernetes Credentials plugin][kubernetes-credentials-plugin])
+* OpenShift OAuth tokens, as secrets (see [Kubernetes Credentials plugin][kubernetes-credentials-plugin])
 
 ## Quick usage guide
 
