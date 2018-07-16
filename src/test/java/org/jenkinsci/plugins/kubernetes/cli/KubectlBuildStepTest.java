@@ -143,4 +143,16 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
         r.assertLogContains("ERROR: Uninitialized keystore", b);
     }
+
+    @Test
+    public void testServerProvidedWithFileCredential() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndServer");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
+        r.assertLogContains("the serverUrl will be ignored as a raw kubeconfig file was provided", b);
+    }
 }

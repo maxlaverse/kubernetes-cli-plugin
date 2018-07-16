@@ -77,7 +77,9 @@ public class KubeConfigWriter {
             if (wasContextProvided()) {
                 useContext(configFile.getRemote(), this.contextName);
             }
-            //Log warning if server rprovided
+            if(this.wasServerUrlProvided()){
+                launcher.getListener().getLogger().println("the serverUrl will be ignored as a raw kubeconfig file was provided");
+            }
         } else {
             setCluster(configFile.getRemote());
             setCredentials(configFile.getRemote(), credentials);
@@ -260,12 +262,21 @@ public class KubeConfigWriter {
     }
 
     /**
-     * Return whether or not a contexName was provided
+     * Return whether or not a contextName was provided
      *
      * @return true if a contextName was provided to the plugin.
      */
     private boolean wasContextProvided() {
         return this.contextName != null && !this.contextName.isEmpty();
+    }
+
+    /**
+     * Return whether or not a serverUrl was provided
+     *
+     * @return true if a serverUrl was provided to the plugin.
+     */
+    private boolean wasServerUrlProvided() {
+        return this.serverUrl != null && !this.serverUrl.isEmpty();
     }
 
     /**
