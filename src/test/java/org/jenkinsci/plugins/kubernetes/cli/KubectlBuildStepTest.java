@@ -86,11 +86,11 @@ public class KubectlBuildStepTest extends KubectlTestBase {
     public void testKubeConfigDisposed() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace(CREDENTIAL_ID));
 
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordWithSpace");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testCleanupOnFailure");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlFailure.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
         r.assertLogContains("kubectl configuration cleaned up", b);
     }
 
