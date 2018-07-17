@@ -45,6 +45,9 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
     @DataBoundSetter
     public String caCertificate;
 
+    @DataBoundSetter
+    public String contextName;
+
     @DataBoundConstructor
     public KubectlBuildWrapper() {
     }
@@ -59,6 +62,7 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
                 this.serverUrl,
                 this.credentialsId,
                 this.caCertificate,
+                this.contextName,
                 workspace,
                 launcher,
                 build);

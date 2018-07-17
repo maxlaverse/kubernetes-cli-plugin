@@ -8,7 +8,8 @@ import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.model.Slave;
 import hudson.util.Secret;
 import org.apache.commons.compress.utils.IOUtils;
-import org.jenkinsci.plugins.kubernetes.credentials.OpenShiftBearerTokenCredentialImpl;
+import org.jenkinsci.plugins.kubernetes.cli.utils.FakeBearerTokenCredentialImpl;
+import org.jenkinsci.plugins.kubernetes.cli.utils.UnsupportedCredential;
 import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -100,6 +101,12 @@ public class KubectlTestBase {
         return new CertificateCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", PASSPHRASE, keyStoreSource);
     }
 
+    protected BaseStandardCredentials brokenCertificateCredential(String credentialId) {
+        String storeFile = getResourceFile("/org/jenkinsci/plugins/kubernetes/cli/kubernetes.pkcs12");
+        CertificateCredentialsImpl.KeyStoreSource keyStoreSource = new CertificateCredentialsImpl.FileOnMasterKeyStoreSource(storeFile);
+        return new CertificateCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", "bad-passphrase", keyStoreSource);
+    }
+
     protected BaseStandardCredentials usernamePasswordCredential(String credentialId) {
         return new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", USERNAME, PASSWORD);
     }
@@ -109,10 +116,25 @@ public class KubectlTestBase {
     }
 
     protected FileCredentials fileCredential(String credentialId) throws UnsupportedEncodingException {
-        return new FileCredentialsImpl(CredentialsScope.GLOBAL, credentialId, "sample", "file-name", SecretBytes.fromBytes("---\napiVersion: v1\nclusters:\n- cluster:\n  name: test-sample\n".getBytes("UTF-8")));
+        return new FileCredentialsImpl(CredentialsScope.GLOBAL,
+                credentialId,
+                "sample",
+                "file-name",
+                SecretBytes.fromBytes(("---\n" +
+                        "apiVersion: v1\n" +
+                        "contexts:\n" +
+                        "- context:\n" +
+                        "  name: test-sample\n" +
+                        "- context:\n" +
+                        "  name: k8s\n" +
+                        "current-context: minikube\n").getBytes("UTF-8")));
     }
 
-    protected OpenShiftBearerTokenCredentialImpl tokenCredential(String credentialId) {
-        return new OpenShiftBearerTokenCredentialImpl(CredentialsScope.GLOBAL, credentialId, "a-description", USERNAME, PASSWORD);
+    protected FakeBearerTokenCredentialImpl tokenCredential(String credentialId) {
+        return new FakeBearerTokenCredentialImpl(CredentialsScope.GLOBAL, credentialId, "a-description", USERNAME, PASSWORD);
+    }
+
+    protected UnsupportedCredential unsupportedCredential(String credentialId) {
+        return new UnsupportedCredential(credentialId, "sample");
     }
 }
