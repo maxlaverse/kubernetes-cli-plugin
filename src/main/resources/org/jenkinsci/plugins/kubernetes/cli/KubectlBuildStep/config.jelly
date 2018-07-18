@@ -9,6 +9,10 @@
     <f:textbox/>
   </f:entry>
 
+  <f:entry field="contextName" title="${%Context name}">
+    <f:textbox/>
+  </f:entry>
+
   <f:entry title="${%Certificate of certificate authority (CA)}" field="caCertificate">
     <f:textarea/>
   </f:entry>

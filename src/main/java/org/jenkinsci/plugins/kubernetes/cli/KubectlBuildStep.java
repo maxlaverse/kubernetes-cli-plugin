@@ -139,7 +139,7 @@ public class KubectlBuildStep extends Step {
          */
         @Override
         public String getDisplayName() {
-            return "Setup Kubernetes CLI (kubectl)";
+            return "Configure Kubernetes CLI (kubectl)";
         }
 
         /**

@@ -37,6 +37,7 @@ node {
     withKubeConfig([credentialsId: '<credential-id>',
                     caCertificate: '<ca-certificate>',
                     serverUrl: '<api-server-address>'
+                    contextName: '<context-name>'
                     ]) {
       sh 'kubectl get pods'
     }
@@ -48,11 +49,14 @@ The arguments to the `withKubeConfig` step are:
 * `credentialsId` - the Jenkins identifier of the credentials to use.
 * `caCertificate` - an optional base64-encoded certificate to check the Kubernetes api server's against. If you don't specify one, the CA verification will be skipped.
 * `serverUrl` - the url of the api server
+* `contextName` - name of the context to create or to switch to if a raw kubeconfig was provided
 
 
 ### From the web interface
-In Jenkins > *job name* > Configure > **Build Environment**
-
+Within the Jenkins dashboard, select a Job and then select Configure
+Scroll down and click the "Add build step" dropdown
+Select "Configure Kubernetes CLI (kubectl)"
+In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
 ![webui](img/webui.png)
 
 

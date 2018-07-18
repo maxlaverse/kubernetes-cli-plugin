@@ -95,7 +95,7 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
 
         @Override
         public String getDisplayName() {
-            return "Setup Kubernetes CLI (kubectl)";
+            return "Configure Kubernetes CLI (kubectl)";
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item item, @QueryParameter String serverUrl) {
