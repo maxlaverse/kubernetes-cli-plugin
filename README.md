@@ -53,10 +53,11 @@ The arguments to the `withKubeConfig` step are:
 
 
 ### From the web interface
-Within the Jenkins dashboard, select a Job and then select Configure
-Scroll down and click the "Add build step" dropdown
-Select "Configure Kubernetes CLI (kubectl)"
-In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
+1. Within the Jenkins dashboard, select a Job and then select Configure
+2. Scroll down and click the "Add build step" dropdown
+3. Select "Configure Kubernetes CLI (kubectl)"
+4. In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
+
 ![webui](img/webui.png)
 
 
@@ -64,6 +65,7 @@ Brief description of the named fields:
 * **credentialsId** - the Jenkins identifier of the credentials to use.
 * **caCertificate** - an optional base64-encoded certificate to check the Kubernetes api server's against
 * **serverUrl** - the url of the api server
+* `contextName` - name of the context to create or to switch to if a raw kubeconfig was provided
 
 
 ## Reporting an issue
@@ -80,6 +82,11 @@ and upload `target/kubernetes-cli.hpi` to your Jenkins installation.
 To run the tests:
 ```bash
 mvn clean test
+```
+
+### Release
+```bash
+mvn release:prepare release:perform
 ```
 
 [credentials-plugin]:https://github.com/jenkinsci/credentials-plugin
