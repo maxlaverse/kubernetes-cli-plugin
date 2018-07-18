@@ -65,7 +65,7 @@ Brief description of the named fields:
 * **credentialsId** - the Jenkins identifier of the credentials to use.
 * **caCertificate** - an optional base64-encoded certificate to check the Kubernetes api server's against
 * **serverUrl** - the url of the api server
-* `contextName` - name of the context to create or to switch to if a raw kubeconfig was provided
+* **contextName** - name of the context to create or to switch to if a raw kubeconfig was provided
 
 
 ## Reporting an issue
@@ -84,10 +84,13 @@ To run the tests:
 mvn clean test
 ```
 
-### Release
+### Perform a release
 ```bash
 mvn release:prepare release:perform
 ```
+
+## Release
+Refer to the [CHANGELOG](CHANGELOG.md) in the plugin repository.
 
 [credentials-plugin]:https://github.com/jenkinsci/credentials-plugin
 [kubernetes-plugin]:https://github.com/jenkinsci/kubernetes-plugin
