@@ -3,9 +3,9 @@ CHANGELOG
 
 1.2.0
 -----
-* Upgrade kubernetes-credentials to 0.3.1 [#1](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/1)
-* Add support for FileCredentials [#2](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/2)
-
+* Add tests for kubectl 1.11 [#10](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/10)
+* Add support for kubectl 1.10.5 [#8](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/8)
+* Add support for contextName [#4](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/4)
 
 1.1.0
 -----
