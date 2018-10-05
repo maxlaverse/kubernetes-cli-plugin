@@ -36,7 +36,7 @@ node {
   stage('List pods') {
     withKubeConfig([credentialsId: '<credential-id>',
                     caCertificate: '<ca-certificate>',
-                    serverUrl: '<api-server-address>'
+                    serverUrl: '<api-server-address>',
                     contextName: '<context-name>'
                     ]) {
       sh 'kubectl get pods'
