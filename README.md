@@ -9,7 +9,7 @@ Any tool built on top of `kubectl` can then be used from your pipelines, e.g. [k
 Initially extracted and rewritten from the [Kubernetes Plugin][kubernetes-plugin].
 
 ## Prerequisites
-* An executor with `kubectl` installed (tested against v1.8, v1.9, v1.10, v1.11)
+* An executor with `kubectl` installed (tested against [v1.8 to v1.12][travis-config] included)
 * A Kubernetes cluster
 
 ## Supported credentials
@@ -91,6 +91,7 @@ mvn release:prepare release:perform
 ## Release
 Refer to the [CHANGELOG](CHANGELOG.md) in the plugin repository.
 
+[travis-config]:.travis.yml
 [credentials-plugin]:https://github.com/jenkinsci/credentials-plugin
 [kubernetes-plugin]:https://github.com/jenkinsci/kubernetes-plugin
 [kubernetes-credentials-plugin]:https://github.com/jenkinsci/kubernetes-credentials-plugin
