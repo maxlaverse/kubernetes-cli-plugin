@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+1.3.0
+-----
+* Add tests for kubectl 1.11 [#11](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/11)
+* Test listing credentials [#12](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/12)
+* Add support for 1.12.0 [#13](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/13)
+* Use latest kubectl versions for tests [#14](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/14)
+* Depend on apache-httpcomponent plugin [#15](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/15)
+* Missing comma in documentation [#16](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/16)
+* Base64 Decode that CA certificates [#17](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/17)
+
 1.2.0
 -----
 * Add tests for kubectl 1.11 [#10](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/10)
