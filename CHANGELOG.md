@@ -10,6 +10,7 @@ CHANGELOG
 * Depend on apache-httpcomponent plugin [#15](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/15)
 * Missing comma in documentation [#16](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/16)
 * Base64 Decode that CA certificates [#17](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/17)
+* Don't require ca certificates to be base64 encoded [#18](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/18)
 
 1.2.0
 -----
