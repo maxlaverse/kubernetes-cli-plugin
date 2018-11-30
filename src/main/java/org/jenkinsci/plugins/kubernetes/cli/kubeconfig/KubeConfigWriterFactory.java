@@ -13,12 +13,12 @@ import java.io.IOException;
  */
 public abstract class KubeConfigWriterFactory {
     public static KubeConfigWriter get(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                                       @Nonnull String caCertificate, @Nonnull String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                                       String caCertificate, String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         return new KubeConfigWriter(serverUrl, credentialsId, caCertificate, contextName, workspace, launcher, build);
     }
 
     public static KubeConfigWriter get(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                                       @Nonnull String caCertificate, @Nonnull String contextName, StepContext context) throws IOException, InterruptedException {
+                                       String caCertificate, String contextName, StepContext context) throws IOException, InterruptedException {
         Run<?, ?> run = context.get(Run.class);
         FilePath workspace = context.get(FilePath.class);
         Launcher launcher = context.get(Launcher.class);

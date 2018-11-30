@@ -11,6 +11,7 @@ import hudson.Launcher;
 import hudson.model.Run;
 import hudson.util.QuotedStringTokenizer;
 import hudson.util.Secret;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
@@ -45,7 +46,7 @@ public class KubeConfigWriter {
     private final Run<?, ?> build;
 
     public KubeConfigWriter(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                            @Nonnull String caCertificate, @Nonnull String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                            String caCertificate, String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         this.serverUrl = serverUrl;
         this.credentialsId = credentialsId;
         this.caCertificate = caCertificate;
@@ -119,7 +120,7 @@ public class KubeConfigWriter {
         } else {
             // Write certificate on disk
             FilePath caCrtFile = workspace.createTempFile("cert-auth", "crt");
-            caCrtFile.write(CertificateHelper.wrapCertificate(caCertificate), null);
+            caCrtFile.write(CertificateHelper.wrapCertificate(new String(Base64.decodeBase64(caCertificate),"UTF-8")), null);
             filesToBeRemoved.add(caCrtFile.getRemote());
 
             tlsConfigArgs = " --embed-certs=true --certificate-authority=" + caCrtFile.getRemote();
