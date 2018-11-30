@@ -120,7 +120,7 @@ public class KubeConfigWriter {
         } else {
             // Write certificate on disk
             FilePath caCrtFile = workspace.createTempFile("cert-auth", "crt");
-            caCrtFile.write(CertificateHelper.wrapCertificate(new String(Base64.decodeBase64(caCertificate),"UTF-8")), null);
+            caCrtFile.write(CertificateHelper.wrapCertificate(caCertificate), null);
             filesToBeRemoved.add(caCrtFile.getRemote());
 
             tlsConfigArgs = " --embed-certs=true --certificate-authority=" + caCrtFile.getRemote();
