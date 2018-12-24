@@ -49,6 +49,23 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertThat(configDumpContent, containsString("certificate-authority-data: " + encodedCertificate));
         assertThat(configDumpContent, containsString("server: " + SERVER_URL));
     }
+    
+    @Test
+    public void testBasicWithCluster() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testBasicWithCluster");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithCluster.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        r.assertLogContains("kubectl configuration cleaned up", b);
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertThat(configDumpContent, containsString("name: " + CLUSTER_NAME));
+    }
 
     @Test
     public void testBasicWithoutCa() throws Exception {
@@ -156,7 +173,23 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "preferences: {}\n" +
                 "users: []", configDumpContent);
     }
+    
+    @Test
+    public void testFileCredentialsWithCluster() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithCluster.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertThat(configDumpContent, containsString("name: " + CLUSTER_NAME));
+    }
+  
     @Test
     public void testSecretCredentials() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredentialWithSpace(CREDENTIAL_ID));

@@ -49,6 +49,9 @@ public class KubectlBuildStep extends Step {
     @DataBoundSetter
     public String contextName;
 
+    @DataBoundSetter
+    public String clusterName;
+    
     @DataBoundConstructor
     public KubectlBuildStep() {
     }
@@ -77,6 +80,7 @@ public class KubectlBuildStep extends Step {
                     step.serverUrl,
                     step.credentialsId,
                     step.caCertificate,
+                    step.clusterName,
                     step.contextName,
                     getContext());
 

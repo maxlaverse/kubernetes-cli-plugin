@@ -38,6 +38,7 @@ public class KubectlTestBase {
     protected static final String PASSWORD_WITH_SPACE = "s3cr3t with-passwordspace";
     protected static final String CA_CERTIFICATE = "-----BEGIN CERTIFICATE-----\na-certificate\n-----END CERTIFICATE-----";
     protected static final String SERVER_URL = "https://localhost:6443";
+    protected static final String CLUSTER_NAME = "test-cluster";
     protected static final String KUBECTL_BINARY = "kubectl";
 
     protected String loadResource(String name) {

@@ -36,7 +36,8 @@ node {
     withKubeConfig([credentialsId: '<credential-id>',
                     caCertificate: '<ca-certificate>',
                     serverUrl: '<api-server-address>',
-                    contextName: '<context-name>'
+                    contextName: '<context-name>',
+                    clusterName: '<cluster-name>'
                     ]) {
       sh 'kubectl get pods'
     }
@@ -49,6 +50,7 @@ The arguments to the `withKubeConfig` step are:
 * `caCertificate` - an optional certificate to check the Kubernetes api server's against. If you don't specify one, the CA verification will be skipped.
 * `serverUrl` - the url of the api server
 * `contextName` - name of the context to create or to switch to if a raw kubeconfig was provided
+* `clusterName` - name of the cluster to create or to switch to if a raw kubeconfig was provided
 
 
 ### From the web interface
@@ -65,6 +67,7 @@ Brief description of the named fields:
 * **caCertificate** - an optional certificate to check the Kubernetes api server's against
 * **serverUrl** - the url of the api server
 * **contextName** - name of the context to create or to switch to if a raw kubeconfig was provided
+* **clusterName** - name of the cluster to create or to switch to if a raw kubeconfig was provided
 
 
 ## Reporting an issue

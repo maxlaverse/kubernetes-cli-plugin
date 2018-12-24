@@ -1,30 +1,33 @@
 package org.jenkinsci.plugins.kubernetes.cli.kubeconfig;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
-import com.cloudbees.plugins.credentials.common.StandardCredentials;
-import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import hudson.AbortException;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.Run;
-import hudson.util.QuotedStringTokenizer;
-import hudson.util.Secret;
-import org.apache.commons.codec.binary.Base64;
+import static com.google.common.collect.Sets.newHashSet;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
 import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.Set;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 
-import static com.google.common.collect.Sets.newHashSet;
+import hudson.AbortException;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Launcher.ProcStarter;
+import hudson.model.Run;
+import hudson.util.QuotedStringTokenizer;
+import hudson.util.Secret;
 
 /**
  * @author Max Laverse
@@ -40,19 +43,21 @@ public class KubeConfigWriter {
     private final String serverUrl;
     private final String credentialsId;
     private final String caCertificate;
+    private final String clusterName;
     private final String contextName;
     private final FilePath workspace;
     private final Launcher launcher;
     private final Run<?, ?> build;
 
     public KubeConfigWriter(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                            String caCertificate, String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                            String caCertificate, String clusterName, String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         this.serverUrl = serverUrl;
         this.credentialsId = credentialsId;
         this.caCertificate = caCertificate;
         this.workspace = workspace;
         this.launcher = launcher;
         this.build = build;
+        this.clusterName = clusterName;
         this.contextName = contextName;
     }
 
@@ -79,13 +84,18 @@ public class KubeConfigWriter {
             if (wasContextProvided()) {
                 useContext(configFile.getRemote(), this.contextName);
             }
+            
             if (this.wasServerUrlProvided()) {
                 launcher.getListener().getLogger().println("the serverUrl will be ignored as a raw kubeconfig file was provided");
             }
+            
+            if (this.wasClusterProvided()) {
+            	setCluster(configFile.getRemote(), this.clusterName);
+            }
         } else {
-            setCluster(configFile.getRemote());
+            setCluster(configFile.getRemote(), this.getClusterNameOrDefault());
             setCredentials(configFile.getRemote(), credentials);
-            setContext(configFile.getRemote(), this.getContextNameOrDefault());
+            setContext(configFile.getRemote(), this.getContextNameOrDefault(), this.getClusterNameOrDefault());
             useContext(configFile.getRemote(), this.getContextNameOrDefault());
         }
 
@@ -108,10 +118,12 @@ public class KubeConfigWriter {
     /**
      * Set the cluster section of the kube configuration file.
      *
+     * @param String configFile
+     * @param String clusterName
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
-    private void setCluster(String configFile) throws IOException, InterruptedException {
+    private void setCluster(String configFile, String clusterName) throws IOException, InterruptedException {
         String tlsConfigArgs;
         Set<String> filesToBeRemoved = newHashSet();
 
@@ -131,7 +143,7 @@ public class KubeConfigWriter {
                     .envs(String.format("KUBECONFIG=%s", configFile))
                     .cmdAsSingleString(String.format("%s config set-cluster %s --server=%s %s",
                             KUBECTL_BINARY,
-                            CLUSTERNAME,
+                            clusterName,
                             serverUrl,
                             tlsConfigArgs))
                     .stdout(launcher.getListener())
@@ -200,14 +212,14 @@ public class KubeConfigWriter {
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
-    private void setContext(String configFile, String contextName) throws IOException, InterruptedException {
+    private void setContext(String configFile, String contextName, String clusterName) throws IOException, InterruptedException {
         // Add the context
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
                         KUBECTL_BINARY,
                         contextName,
-                        CLUSTERNAME,
+                        clusterName,
                         USERNAME))
                 .stdout(launcher.getListener())
                 .join();
@@ -273,6 +285,15 @@ public class KubeConfigWriter {
     private boolean wasContextProvided() {
         return this.contextName != null && !this.contextName.isEmpty();
     }
+    
+    /**
+     * Return whether or not a clusterName was provided
+     *
+     * @return true if a clusterName was provided to the plugin.
+     */
+    private boolean wasClusterProvided() {
+        return this.clusterName != null && !this.clusterName.isEmpty();
+    }
 
     /**
      * Return whether or not a serverUrl was provided
@@ -295,4 +316,15 @@ public class KubeConfigWriter {
         return this.contextName;
     }
 
+    /**
+     * Returns a clusterName
+     *
+     * @return clusterName if provided, else the default value.
+     */
+    private String getClusterNameOrDefault() {
+        if (!wasClusterProvided()) {
+            return CLUSTERNAME;
+        }
+        return this.clusterName;
+    }
 }
