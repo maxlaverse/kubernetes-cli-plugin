@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+1.4.0
+-----
+* Added support for clusterName option [#19](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/19)
+* Upgrade kubectl versions [#20](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/20)
+* Add tests for kubectl 1.13 [#21](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/21)
+
 1.3.0
 -----
 * Add tests for kubectl 1.11 [#11](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/11)

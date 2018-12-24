@@ -9,7 +9,7 @@ Any tool built on top of `kubectl` can then be used from your pipelines, e.g. [k
 Initially extracted and rewritten from the [Kubernetes Plugin][kubernetes-plugin].
 
 ## Prerequisites
-* An executor with `kubectl` installed (tested against [v1.8 to v1.12][travis-config] included)
+* An executor with `kubectl` installed (tested against [v1.8 to v1.13][travis-config] included)
 * A Kubernetes cluster
 
 ## Supported credentials
