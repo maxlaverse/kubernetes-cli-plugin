@@ -63,12 +63,11 @@ The arguments to the `withKubeConfig` step are:
 
 
 Brief description of the named fields:
-* **credentialsId** - the Jenkins identifier of the credentials to use.
-* **caCertificate** - an optional certificate to check the Kubernetes api server's against
-* **serverUrl** - the url of the api server
-* **contextName** - name of the context to create or to switch to if a raw kubeconfig was provided
-* **clusterName** - name of the cluster to create or to switch to if a raw kubeconfig was provided
-
+* **Credentials** - the Jenkins identifier of the credentials to use.
+* **Kubernetes server endpoint** - the url of the api server
+* **Context name** - name of the context to create or to switch to if a raw kubeconfig was provided
+* **Cluster name** - name of the cluster to create or to switch to if a raw kubeconfig was provided
+* **Certificate of certificate authority** - an optional certificate to check the Kubernetes api server's against
 
 ## Reporting an issue
 Please file bug reports directly on the Jenkins [issue tracker][issue-tracker]
