@@ -46,11 +46,11 @@ node {
 ```
 
 The arguments to the `withKubeConfig` step are:
-* `credentialsId` - the Jenkins identifier of the credentials to use.
-* `caCertificate` - an optional certificate to check the Kubernetes api server's against. If you don't specify one, the CA verification will be skipped.
-* `serverUrl` - the url of the api server
-* `contextName` - name of the context to create or to switch to if a raw kubeconfig was provided
-* `clusterName` - name of the cluster to create or to switch to if a raw kubeconfig was provided
+* `credentialsId` - the Jenkins identifier of the credentials to authenticate against the cluster, or of a raw KubeConfig file. 
+* `caCertificate` (optional) - an certificate to check the Kubernetes api server's against. If you don't specify one, the CA verification will be skipped.
+* `serverUrl` (optional with raw KubeConfig) - the url of the api server
+* `contextName` (optional) - name of the context to create or to switch to if a raw kubeconfig was provided
+* `clusterName` (optioanl) - name of the cluster to create or to switch to if a raw kubeconfig was provided
 
 
 ### From the web interface
