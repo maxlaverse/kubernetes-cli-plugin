@@ -69,6 +69,30 @@ Brief description of the named fields:
 * **Cluster name** - name of the cluster to create or to switch to if a raw kubeconfig was provided
 * **Certificate of certificate authority** - an optional certificate to check the Kubernetes api server's against
 
+### Using namespaces
+In order to use namespaced contexts you have to upload raw .kube/config to Jenkins credentials menu and then use it as a value to `credentialsId`.
+
+1. Create new credentials in Jenkins, choose i.e. 'Secret file' option.
+2. Upload your desired .kube/config and give it a name/id in credentials creation form.
+3. Pass the id name you have given to this credential resource as value to `credentialsId` field.
+
+Example:
+```groovy
+node {
+  stage('List pods') {
+    withKubeConfig([credentialsId: '<kubeconfig-file-credentials-id>',
+                    caCertificate: '<ca-certificate>',
+                    serverUrl: '<api-server-address>',
+                    contextName: '<context-name>',
+                    clusterName: '<cluster-name>'
+                    ]) {
+      sh 'kubectl get pods'
+    }
+  }
+}
+```
+
+
 ## Reporting an issue
 Please file bug reports directly on the Jenkins [issue tracker][issue-tracker]
 
