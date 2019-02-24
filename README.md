@@ -48,7 +48,7 @@ The parameters have a slightly different effect depending if a plain KubeConfig 
 
 The plugin writes the plain KubeConfig file and doesn't change any other field if only `credentialsId` is provided.
 The recommended way to use a single KubeConfig file with multiples clusters, users, and default namespaces is to
-configure a Context for each of them, and use the `contextName` parameter to switch between them.
+configure a Context for each of them, and use the `contextName` parameter to switch between them (see [Kubernetes documentation][multi-clusters]).
 
 | Name            | Mandatory | Description   |
 | --------------- | --------- | ------------- |
@@ -125,3 +125,4 @@ Refer to the [CHANGELOG](CHANGELOG.md) in the plugin repository.
 [kubernetes-deploy]:https://github.com/Shopify/kubernetes-deploy
 [master-build]: https://ci.jenkins.io/job/Plugins/job/kubernetes-cli-plugin/job/master/
 [issue-tracker]: https://issues.jenkins-ci.org/issues/?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened%2C%20%22In%20Review%22)%20AND%20component%20%3D%20kubernetes-cli-plugin
+[multi-clusters]: https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
