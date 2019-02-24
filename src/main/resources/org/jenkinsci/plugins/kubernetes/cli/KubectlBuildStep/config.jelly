@@ -9,11 +9,11 @@
     <f:textbox/>
   </f:entry>
 
-  <f:entry field="contextName" title="${%Context name}">
+  <f:entry field="clusterName" title="${%Cluster name}">
     <f:textbox/>
   </f:entry>
 
-  <f:entry field="clusterName" title="${%Cluster name}">
+  <f:entry field="contextName" title="${%Context name}">
     <f:textbox/>
   </f:entry>
 
