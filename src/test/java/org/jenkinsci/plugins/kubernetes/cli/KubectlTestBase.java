@@ -123,12 +123,16 @@ public class KubectlTestBase {
                 "file-name",
                 SecretBytes.fromBytes(("---\n" +
                         "apiVersion: v1\n" +
+                        "clusters:\n" +
+                        "- cluster:\n" +
+                        "  name: test-sample\n" +
                         "contexts:\n" +
                         "- context:\n" +
+                        "    cluster: test-sample\n" +
                         "  name: test-sample\n" +
                         "- context:\n" +
-                        "  name: k8s\n" +
-                        "current-context: minikube\n").getBytes("UTF-8")));
+                        "  name: minikube\n" +
+                        "current-context: test-sample\n").getBytes("UTF-8")));
     }
 
     protected FakeBearerTokenCredentialImpl tokenCredential(String credentialId) {

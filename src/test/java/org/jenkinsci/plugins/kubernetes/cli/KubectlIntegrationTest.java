@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.kubernetes.cli;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.FilePath;
+import hudson.util.IOUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -11,7 +12,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.nio.file.Files;
 import java.util.Base64;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,7 +55,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertThat(configDumpContent, containsString("certificate-authority-data: " + encodedCertificate));
         assertThat(configDumpContent, containsString("server: " + SERVER_URL));
     }
-    
+
     @Test
     public void testBasicWithCluster() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
@@ -136,91 +142,6 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertThat(configDumpContent, containsString("username: " + USERNAME));
         assertThat(configDumpContent, containsString("password: " + PASSWORD));
         assertThat(configDumpContent, containsString("current-context: test-sample"));
-    }
-
-    @Test
-    public void testFileCredentials() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMinimal.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
-
-        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
-        assertTrue(configDump.exists());
-        String configDumpContent = configDump.readToString().trim();
-        assertEquals("---\n" +
-                "apiVersion: v1\n" +
-                "contexts:\n" +
-                "- context:\n" +
-                "  name: test-sample\n" +
-                "- context:\n" +
-                "  name: k8s\n" +
-                "current-context: minikube", configDumpContent);
-    }
-
-    @Test
-    public void testFileCredentialsWithContext() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithContext.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
-
-        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
-        assertTrue(configDump.exists());
-        String configDumpContent = configDump.readToString().trim();
-        assertEquals("apiVersion: v1\n" +
-                "clusters: []\n" +
-                "contexts:\n" +
-                "- context:\n" +
-                "    cluster: \"\"\n" +
-                "    user: \"\"\n" +
-                "  name: k8s\n" +
-                "- context:\n" +
-                "    cluster: \"\"\n" +
-                "    user: \"\"\n" +
-                "  name: test-sample\n" +
-                "current-context: test-sample\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
-                "users: []", configDumpContent);
-    }
-
-    @Test
-    public void testFileCredentialsWithCluster() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithCluster.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
-
-        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
-        assertTrue(configDump.exists());
-        String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("name: " + CLUSTER_NAME));
-    }
-
-    @Test
-    public void testFileCredentialsWithNamespace() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithNamespace.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
-
-        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
-        assertTrue(configDump.exists());
-        String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("namespace: test-ns"));
     }
 
     @Test
@@ -328,5 +249,160 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
         assertThat(configDumpContent, containsString("token: faketoken:bob:s3cr3t"));
+    }
+
+    @Test
+    public void testPlainKubeConfig() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMinimal.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+
+        String originalContent = new BufferedReader(new InputStreamReader(fileCredential(CREDENTIAL_ID).getContent())).lines().collect(Collectors.joining("\n"));
+        assertEquals(originalContent, configDumpContent);
+    }
+
+    @Test
+    public void testPlainKubeConfigWithContext() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithContext.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertEquals("apiVersion: v1\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    server: \"\"\n" +
+                "  name: test-sample\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"\"\n" +
+                "    user: \"\"\n" +
+                "  name: minikube\n" +
+                "- context:\n" +
+                "    cluster: test-sample\n" +
+                "    user: \"\"\n" +
+                "  name: test-sample\n" +
+                "current-context: minikube\n" +
+                "kind: Config\n" +
+                "preferences: {}\n" +
+                "users: []", configDumpContent);
+    }
+
+    @Test
+    public void testPlainKubeConfigWithCluster() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithCluster.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertEquals("apiVersion: v1\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    server: \"\"\n" +
+                "  name: test-sample\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"\"\n" +
+                "    user: \"\"\n" +
+                "  name: minikube\n" +
+                "- context:\n" +
+                "    cluster: test-cluster\n" +
+                "    user: \"\"\n" +
+                "  name: test-sample\n" +
+                "current-context: test-sample\n" +
+                "kind: Config\n" +
+                "preferences: {}\n" +
+                "users: []", configDumpContent);
+    }
+
+    @Test
+    public void testPlainKubeConfigWithServer() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertEquals("apiVersion: v1\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    insecure-skip-tls-verify: true\n" +
+                "    server: https://localhost:6443\n" +
+                "  name: k8s\n" +
+                "- cluster:\n" +
+                "    server: \"\"\n" +
+                "  name: test-sample\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"\"\n" +
+                "    user: \"\"\n" +
+                "  name: minikube\n" +
+                "- context:\n" +
+                "    cluster: k8s\n" +
+                "    user: \"\"\n" +
+                "  name: test-sample\n" +
+                "current-context: test-sample\n" +
+                "kind: Config\n" +
+                "preferences: {}\n" +
+                "users: []", configDumpContent);
+    }
+
+    @Test
+    public void testPlainKubeConfigWithNamespace() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithNamespace.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertEquals("apiVersion: v1\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    server: \"\"\n" +
+                "  name: test-sample\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"\"\n" +
+                "    user: \"\"\n" +
+                "  name: minikube\n" +
+                "- context:\n" +
+                "    cluster: test-sample\n" +
+                "    namespace: test-ns\n" +
+                "    user: \"\"\n" +
+                "  name: test-sample\n" +
+                "current-context: test-sample\n" +
+                "kind: Config\n" +
+                "preferences: {}\n" +
+                "users: []", configDumpContent);
     }
 }

@@ -29,7 +29,7 @@ The parameters have a slightly different effect depending if a plain KubeConfig 
 | --------------- | --------- | ------------- |
 | `credentialsId` | yes       | The Jenkins ID of the credentials. |
 | `serverUrl`     | yes       | URL of the API server's. |
-| `caCertificate` | no        | Cluster Certificate Authority used to validate the API server's certificate. Validation skipped if the parameter is not provided. |
+| `caCertificate` | no        | Cluster Certificate Authority used to validate the API server's certificate. The validation is skipped if the parameter is not provided. |
 | `clusterName`   | no        | Name of the generated Cluster configuration. (default: `k8s`) |
 | `namespace`     | no        | Namespace for the Context. |
 | `contextName`   | no        | Name of the generated Context configuration. (default: `k8s`) |
@@ -41,11 +41,11 @@ The plugin writes the plain KubeConfig file and doesn't change any other field i
 | Name            | Mandatory | Description   |
 | --------------- | --------- | ------------- |
 | `credentialsId` | yes       | The Jenkins ID of the plain KubeConfig file. |
-| `serverUrl`     | no        | URL of the API server's. |
-| `caCertificate` | no        | Cluster Certificate Authority used to validate the API server's certificate. Validation skipped if the parameter is not provided. |
-| `clusterName`   | no        | Name of the generated Cluster configuration if a `clusterName` was provided. |
-| `namespace`     | no        | Namespace for the Context. |
-| `contextName`   | no        | Name of the Context to use. |
+| `serverUrl`     | no        | URL of the API server's. This will create a new `cluster` block and modify the current Context to use it. |
+| `caCertificate` | no        | Cluster Certificate Authority used to validate the API server's certificate if a `serverUrl` was provided. The validation is skipped if the parameter is not provided. |
+| `clusterName`   | no        | Modifies the Cluster of the current Context. Also used for the generated `cluster` block if a `serverUrl` was provided. |
+| `namespace`     | no        | Modifies the Namespace of the current Context. |
+| `contextName`   | no        | Switch the current Context to this name. The Context must already exist in the KubeConfig file. |
 
 
 ### Pipeline usage

@@ -145,7 +145,19 @@ public class KubectlBuildStepTest extends KubectlTestBase {
     }
 
     @Test
-    public void testServerProvidedWithFileCredential() throws Exception {
+    public void testPlainKubeConfig() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndClusterName");
+        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlMinimal.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        waitForResult(b, Result.SUCCESS);
+        r.assertLogNotContains("kubectl, config, set-cluster", b);
+    }
+
+    @Test
+    public void testPlainKubeConfigWithServerUrl() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndServer");
@@ -153,7 +165,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.SUCCESS);
-        r.assertLogContains("the serverUrl will be ignored as a raw kubeconfig file was provided", b);
+        r.assertLogContains("kubectl, config, set-cluster", b);
     }
 
     private void waitForResult(WorkflowRun b, Result result) throws Exception {
