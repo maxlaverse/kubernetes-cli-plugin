@@ -8,6 +8,16 @@ Any tool built on top of `kubectl` can then be used from your pipelines, e.g. [k
 
 Initially extracted and rewritten from the [Kubernetes Plugin][kubernetes-plugin].
 
+```groovy
+node {
+  stage('Apply Kubernetes files') {
+    withKubeConfig([credentialsId: 'user1', serverUrl: 'https://api.k8s.my-company.com']) {
+      sh 'kubectl apply -f my-kubernetes-directory'
+    }
+  }
+}
+```
+
 ## Prerequisites
 * An executor with `kubectl` installed (tested against [v1.8 to v1.13][travis-config] included)
 * A Kubernetes cluster
