@@ -40,7 +40,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+        waitForResult(b, Result.SUCCESS);
     }
 
     @Test
@@ -52,7 +52,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        waitForResult(b, Result.FAILURE);
         r.assertLogContains("ERROR: No credentials found for id \"cred1234\"", b);
     }
 
@@ -64,7 +64,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+        waitForResult(b, Result.SUCCESS);
         r.assertLogNotContains("with-space", b);
         r.assertLogNotContains("s3cr3t", b);
     }
@@ -77,7 +77,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+        waitForResult(b, Result.SUCCESS);
         r.assertLogNotContains("with-passwordspace", b);
         r.assertLogNotContains("s3cr3t", b);
     }
@@ -90,7 +90,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlFailure.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        waitForResult(b, Result.FAILURE);
         r.assertLogContains("kubectl configuration cleaned up", b);
     }
 
@@ -100,7 +100,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlWithEmptyCredential.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        waitForResult(b, Result.FAILURE);
         r.assertLogContains("ERROR: No credentials defined to setup Kubernetes CLI", b);
     }
 
@@ -112,7 +112,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        waitForResult(b, Result.FAILURE);
         r.assertLogContains("ERROR: Unsupported Credentials type org.jenkinsci.plugins.kubernetes.cli.utils.UnsupportedCredential", b);
     }
 
@@ -140,7 +140,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatus(Result.FAILURE, r.waitForCompletion(b));
+        waitForResult(b, Result.FAILURE);
         r.assertLogContains("ERROR: Uninitialized keystore", b);
     }
 
@@ -152,7 +152,15 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
-        r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
+        waitForResult(b, Result.SUCCESS);
         r.assertLogContains("the serverUrl will be ignored as a raw kubeconfig file was provided", b);
     }
+
+    private void waitForResult(WorkflowRun b, Result result) throws Exception {
+        r.assertBuildStatus(result, r.waitForCompletion(b));
+
+        // Because else Jenkins would not always show all the logs
+        Thread.sleep(1000);
+    }
+
 }

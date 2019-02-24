@@ -22,6 +22,32 @@ The following types of credentials are supported and can be used to authenticate
 
 ## Quick usage guide
 
+The parameters have a slightly different effect depending if a plain KubeConfig file is provided or not.
+
+### Parameters (without KubeConfig file)
+| Name            | Mandatory | Description   |
+| --------------- | --------- | ------------- |
+| `credentialsId` | yes       | The Jenkins ID of the credentials. |
+| `serverUrl`     | yes       | URL of the API server's. |
+| `caCertificate` | no        | Cluster Certificate Authority used to validate the API server's certificate. Validation skipped if the parameter is not provided. |
+| `clusterName`   | no        | Name of the generated Cluster configuration. (default: `k8s`) |
+| `namespace`     | no        | Namespace for the Context. |
+| `contextName`   | no        | Name of the generated Context configuration. (default: `k8s`) |
+
+### Parameters (with KubeConfig file)
+
+The plugin writes the plain KubeConfig file and doesn't change any other field if only `credentialsId` is provided.
+
+| Name            | Mandatory | Description   |
+| --------------- | --------- | ------------- |
+| `credentialsId` | yes       | The Jenkins ID of the plain KubeConfig file. |
+| `serverUrl`     | no        | URL of the API server's. |
+| `caCertificate` | no        | Cluster Certificate Authority used to validate the API server's certificate. Validation skipped if the parameter is not provided. |
+| `clusterName`   | no        | Name of the generated Cluster configuration if a `clusterName` was provided. |
+| `namespace`     | no        | Namespace for the Context. |
+| `contextName`   | no        | Name of the Context to use. |
+
+
 ### Pipeline usage
 The `kubernetes-cli` plugin provides the function `withKubeConfig()` for Jenkins Pipeline support.
 You can go to the *Snippet Generator* page under *Pipeline Syntax* section in Jenkins, select
@@ -37,21 +63,14 @@ node {
                     caCertificate: '<ca-certificate>',
                     serverUrl: '<api-server-address>',
                     contextName: '<context-name>',
-                    clusterName: '<cluster-name>'
+                    clusterName: '<cluster-name>',
+                    namespace: '<namespace>'
                     ]) {
       sh 'kubectl get pods'
     }
   }
 }
 ```
-
-The arguments to the `withKubeConfig` step are:
-* `credentialsId` - the Jenkins identifier of the credentials to authenticate against the cluster, or of a raw KubeConfig file. 
-* `caCertificate` (optional) - an certificate to check the Kubernetes api server's against. If you don't specify one, the CA verification will be skipped.
-* `serverUrl` (optional with raw KubeConfig) - the url of the api server
-* `contextName` (optional) - name of the context to create or to switch to if a raw kubeconfig was provided
-* `clusterName` (optioanl) - name of the cluster to create or to switch to if a raw kubeconfig was provided
-
 
 ### From the web interface
 1. Within the Jenkins dashboard, select a Job and then select Configure
@@ -60,14 +79,6 @@ The arguments to the `withKubeConfig` step are:
 4. In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
 
 ![webui](img/webui.png)
-
-
-Brief description of the named fields:
-* **Credentials** - the Jenkins identifier of the credentials to use.
-* **Kubernetes server endpoint** - the url of the api server
-* **Context name** - name of the context to create or to switch to if a raw kubeconfig was provided
-* **Cluster name** - name of the cluster to create or to switch to if a raw kubeconfig was provided
-* **Certificate of certificate authority** - an optional certificate to check the Kubernetes api server's against
 
 ## Reporting an issue
 Please file bug reports directly on the Jenkins [issue tracker][issue-tracker]

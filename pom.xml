@@ -47,12 +47,16 @@
     <jenkins-workflow-support.version>2.14</jenkins-workflow-support.version>
     <jenkins-workflow-scm-step.version>2.4</jenkins-workflow-scm-step.version>
     <jenkins-scm-api.version>2.0.7</jenkins-scm-api.version>
+    <jenkins-ssh-credentials.version>1.12</jenkins-ssh-credentials.version>
     <jenkins-declarative.version>1.1.2</jenkins-declarative.version>
     <jenkins-kubernetes-credentials.version>0.3.1</jenkins-kubernetes-credentials.version>
 
     <!-- maven plugins versions -->
     <maven-coveralls.version>4.3.0</maven-coveralls.version>
     <maven-jacoco.version>0.8.1</maven-jacoco.version>
+
+    <!-- parent override -->
+    <surefire.rerunFailingTestsCount>0</surefire.rerunFailingTestsCount>
   </properties>
 
   <dependencies>
@@ -137,7 +141,7 @@
       <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>ssh-credentials</artifactId>
-        <version>1.12</version>
+        <version>${jenkins-ssh-credentials.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

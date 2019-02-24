@@ -86,6 +86,23 @@ public class KubectlIntegrationTest extends KubectlTestBase {
     }
 
     @Test
+    public void testBasicWithNamespace() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testBasicWithNamespace");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithNamespace.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        r.assertLogContains("kubectl configuration cleaned up", b);
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertThat(configDumpContent, containsString("namespace: test-ns"));
+    }
+
+    @Test
     public void testUsernamePasswordCredentials() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace(CREDENTIAL_ID));
 
@@ -126,7 +143,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMinimal.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -173,7 +190,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "preferences: {}\n" +
                 "users: []", configDumpContent);
     }
-    
+
     @Test
     public void testFileCredentialsWithCluster() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
@@ -189,7 +206,23 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         String configDumpContent = configDump.readToString().trim();
         assertThat(configDumpContent, containsString("name: " + CLUSTER_NAME));
     }
-  
+
+    @Test
+    public void testFileCredentialsWithNamespace() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithNamespace.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+        assertThat(configDumpContent, containsString("namespace: test-ns"));
+    }
+
     @Test
     public void testSecretCredentials() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredentialWithSpace(CREDENTIAL_ID));

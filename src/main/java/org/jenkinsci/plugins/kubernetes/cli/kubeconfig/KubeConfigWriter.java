@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.kubernetes.cli.kubeconfig;
 
 import static com.google.common.collect.Sets.newHashSet;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
@@ -24,7 +25,6 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Launcher.ProcStarter;
 import hudson.model.Run;
 import hudson.util.QuotedStringTokenizer;
 import hudson.util.Secret;
@@ -45,12 +45,13 @@ public class KubeConfigWriter {
     private final String caCertificate;
     private final String clusterName;
     private final String contextName;
+    private final String namespace;
     private final FilePath workspace;
     private final Launcher launcher;
     private final Run<?, ?> build;
 
     public KubeConfigWriter(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                            String caCertificate, String clusterName, String contextName, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                            String caCertificate, String clusterName, String contextName, String namespace, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         this.serverUrl = serverUrl;
         this.credentialsId = credentialsId;
         this.caCertificate = caCertificate;
@@ -59,6 +60,7 @@ public class KubeConfigWriter {
         this.build = build;
         this.clusterName = clusterName;
         this.contextName = contextName;
+        this.namespace = namespace;
     }
 
     /**
@@ -81,22 +83,27 @@ public class KubeConfigWriter {
             throw new AbortException("No credentials defined to setup Kubernetes CLI");
         } else if (credentials instanceof FileCredentials) {
             setRawKubeConfig(configFile, (FileCredentials) credentials);
+
             if (wasContextProvided()) {
                 useContext(configFile.getRemote(), this.contextName);
             }
-            
+
             if (this.wasServerUrlProvided()) {
                 launcher.getListener().getLogger().println("the serverUrl will be ignored as a raw kubeconfig file was provided");
             }
             
-            if (this.wasClusterProvided()) {
-            	setCluster(configFile.getRemote(), this.clusterName);
+            if (wasClusterProvided()) {
+                setCluster(configFile.getRemote(), this.clusterName);
             }
         } else {
-            setCluster(configFile.getRemote(), this.getClusterNameOrDefault());
+            setCluster(configFile.getRemote(), getClusterNameOrDefault());
             setCredentials(configFile.getRemote(), credentials);
-            setContext(configFile.getRemote(), this.getContextNameOrDefault(), this.getClusterNameOrDefault());
-            useContext(configFile.getRemote(), this.getContextNameOrDefault());
+            setContext(configFile.getRemote(), getContextNameOrDefault(), getClusterNameOrDefault());
+            useContext(configFile.getRemote(), getContextNameOrDefault());
+        }
+
+        if (wasNamespaceProvided()){
+            setNamespace(configFile.getRemote(),namespace);
         }
 
 
@@ -213,7 +220,6 @@ public class KubeConfigWriter {
      * @throws InterruptedException on file operations
      */
     private void setContext(String configFile, String contextName, String clusterName) throws IOException, InterruptedException {
-        // Add the context
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
@@ -224,6 +230,46 @@ public class KubeConfigWriter {
                 .stdout(launcher.getListener())
                 .join();
         if (status != 0) throw new IOException("Failed to add kubectl context (exit code  " + status + ")");
+    }
+
+    /**
+     * Set the namespace of the context section in the kube configuration file.
+     *
+     * @throws IOException          on file operations
+     * @throws InterruptedException on file operations
+     */
+    private void setNamespace(String configFile, String namespace) throws IOException, InterruptedException {
+        // Starting kubectl 1.12, we can use --current instead of having to determine the context we are in.
+        // To be done once we drop support for <1.12
+        int status = launcher.launch()
+                .envs(String.format("KUBECONFIG=%s", configFile))
+                .cmdAsSingleString(String.format("%s config set-context %s --namespace=%s",
+                        KUBECTL_BINARY,
+                        getCurrentContext(configFile),
+                        namespace,
+                        USERNAME))
+                .stdout(launcher.getListener())
+                .join();
+        if (status != 0) throw new IOException("Failed to set kubectl namespace (exit code  " + status + ")");
+    }
+
+    /**
+     * Get the current context of the kube configuration file.
+     *
+     * @throws IOException          on file operations
+     * @throws InterruptedException on file operations
+     */
+    private String getCurrentContext(String configFile) throws IOException, InterruptedException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        int status = launcher.launch()
+                .envs(String.format("KUBECONFIG=%s", configFile))
+                .cmdAsSingleString(String.format("%s config current-context",
+                        KUBECTL_BINARY,
+                        USERNAME))
+                .stdout(output)
+                .join();
+        if (status != 0) throw new IOException("Failed to get kubectl current-context (exit code  " + status + ")");
+        return output.toString("UTF-8");
     }
 
     /**
@@ -303,6 +349,13 @@ public class KubeConfigWriter {
     private boolean wasServerUrlProvided() {
         return this.serverUrl != null && !this.serverUrl.isEmpty();
     }
+
+    /**
+     * Return whether or not a namespace was provided
+     *
+     * @return true if a namespace was provided to the plugin.
+     */
+    private boolean wasNamespaceProvided() { return this.namespace != null && !this.namespace.isEmpty(); }
 
     /**
      * Returns a contextName
