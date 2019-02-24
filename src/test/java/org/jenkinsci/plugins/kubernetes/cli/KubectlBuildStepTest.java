@@ -37,7 +37,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(folder).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = folder.createProject(WorkflowJob.class, "testScopedCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.SUCCESS);
@@ -49,7 +49,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(folder).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testMissingScopedCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
@@ -61,7 +61,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredentialWithSpace(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testSecretWithSpace");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.SUCCESS);
@@ -74,7 +74,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordWithSpace");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.SUCCESS);
@@ -87,7 +87,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testCleanupOnFailure");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlFailure.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMockedFailure.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
@@ -97,7 +97,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
     @Test
     public void testCredentialNotProvided() throws Exception {
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithEmptyCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectlWithEmptyCredential.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMockedWithEmptyCredential.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
@@ -109,7 +109,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), unsupportedCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithUnsupportedCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
@@ -137,7 +137,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), brokenCertificateCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithBrokenCertificate");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
@@ -145,15 +145,27 @@ public class KubectlBuildStepTest extends KubectlTestBase {
     }
 
     @Test
-    public void testServerProvidedWithFileCredential() throws Exception {
+    public void testPlainKubeConfig() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndServer");
-        p.setDefinition(new CpsFlowDefinition(loadResource("mockedKubectl.groovy"), true));
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndClusterName");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMockedWithCluster.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.SUCCESS);
-        r.assertLogContains("the serverUrl will be ignored as a raw kubeconfig file was provided", b);
+        r.assertLogNotContains("kubectl, config, set-cluster", b);
+    }
+
+    @Test
+    public void testPlainKubeConfigWithServerUrl() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndServer");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        waitForResult(b, Result.SUCCESS);
+        r.assertLogContains("kubectl, config, set-cluster", b);
     }
 
     private void waitForResult(WorkflowRun b, Result result) throws Exception {
