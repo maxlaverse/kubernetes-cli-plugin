@@ -22,6 +22,6 @@ public abstract class KubeConfigWriterFactory {
         Run<?, ?> run = context.get(Run.class);
         FilePath workspace = context.get(FilePath.class);
         Launcher launcher = context.get(Launcher.class);
-        return new KubeConfigWriter(serverUrl, credentialsId, caCertificate, clusterName, contextName,namespace,  workspace, launcher, run);
+        return new KubeConfigWriter(serverUrl, credentialsId, caCertificate, clusterName, contextName, namespace, workspace, launcher, run);
     }
 }
