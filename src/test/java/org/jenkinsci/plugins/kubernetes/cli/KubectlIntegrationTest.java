@@ -43,7 +43,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testBasicWithCa");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServerAndCa.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -61,7 +61,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testBasicWithCluster");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithCluster.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithCluster.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -78,7 +78,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testBasicWithoutCa");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -96,7 +96,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testBasicWithNamespace");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithNamespace.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithNamespace.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -113,7 +113,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredentialWithSpace(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -131,7 +131,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testUsernamePasswordCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCaWithContext.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServerAndContext.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -149,7 +149,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredentialWithSpace(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testSecretCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -166,7 +166,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), certificateCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testCertificateCredentials");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -226,7 +226,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "kubectl path with spaces");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpKubeConfigPath.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlEchoKubeConfigPath.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -240,7 +240,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), tokenCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "tokenProducerCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -256,7 +256,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMinimal.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpMinimal.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -274,7 +274,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithContext.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithContext.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -307,7 +307,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithCluster.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithCluster.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -340,7 +340,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlWithoutCa.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
@@ -377,7 +377,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
 
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlRawWithNamespace.groovy"), true));
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlDumpWithNamespace.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
