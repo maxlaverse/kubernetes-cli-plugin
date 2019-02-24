@@ -56,7 +56,7 @@
     <maven-jacoco.version>0.8.1</maven-jacoco.version>
 
     <!-- parent override -->
-    <surefire.rerunFailingTestsCount>3</surefire.rerunFailingTestsCount>
+    <surefire.rerunFailingTestsCount>0</surefire.rerunFailingTestsCount>
   </properties>
 
   <dependencies>
