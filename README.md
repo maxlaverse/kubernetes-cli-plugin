@@ -47,6 +47,8 @@ The parameters have a slightly different effect depending if a plain KubeConfig 
 ### Parameters (with KubeConfig file)
 
 The plugin writes the plain KubeConfig file and doesn't change any other field if only `credentialsId` is provided.
+The recommended way to use a single KubeConfig file with multiples clusters, users, and default namespaces is to
+configure a Context for each of them, and use the `contextName` parameter to switch between them.
 
 | Name            | Mandatory | Description   |
 | --------------- | --------- | ------------- |
