@@ -299,9 +299,7 @@ public class KubeConfigWriter {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config current-context",
-                        KUBECTL_BINARY,
-                        USERNAME))
+                .cmdAsSingleString(String.format("%s config current-context", KUBECTL_BINARY))
                 .stdout(output)
                 .join();
         if (status != 0) throw new IOException("Failed to get kubectl current-context (exit code  " + status + ")");
