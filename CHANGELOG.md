@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+1.5.0
+-----
+* Add support for namespace [#23](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/23)
+* Other changes [#24](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/24)
+* Fix plain kubeconfig setup [#25](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/25)
+
 1.4.0
 -----
 * Added support for clusterName option [#19](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/19)
