@@ -7,6 +7,8 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Result;
 import hudson.util.ListBoxModel;
+import org.jenkinsci.plugins.envinject.EnvInjectBuildWrapper;
+import org.jenkinsci.plugins.envinject.EnvInjectJobPropertyInfo;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,6 +48,32 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
         assertNotNull(b);
         r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
         r.assertLogContains("KUBECONFIG=" + b.getWorkspace() + File.separator + ".kube", b);
+    }
+
+    @Test
+    public void testEnvInterpolation() throws Exception {
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secretCredential(CREDENTIAL_ID));
+
+        FreeStyleProject p = r.createFreeStyleProject();
+
+        StringBuffer propertiesContent = new StringBuffer();
+        propertiesContent.append("SERVER_URL").append("=").append("http://my-server");
+        EnvInjectJobPropertyInfo info = new EnvInjectJobPropertyInfo(null, propertiesContent.toString(), null, null, true, null);
+        EnvInjectBuildWrapper envInjectBuildWrapper = new EnvInjectBuildWrapper();
+        envInjectBuildWrapper.setInfo(info);
+        p.getBuildWrappersList().add(envInjectBuildWrapper);
+
+
+        KubectlBuildWrapper bw = new KubectlBuildWrapper();
+        bw.credentialsId = CREDENTIAL_ID;
+        bw.serverUrl = "${SERVER_URL}";
+        p.getBuildWrappersList().add(bw);
+
+
+        FreeStyleBuild b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
+        r.assertLogContains("--server=http://my-server", b);
     }
 
     @Test
