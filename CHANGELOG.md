@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.6.0
+-----
+* Resolve environment variables in serverUrl for Freestyle jobs [#26](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/26)
+
 1.5.0
 -----
 * Add support for namespace [#23](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/23)
