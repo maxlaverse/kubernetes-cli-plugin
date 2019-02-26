@@ -6,6 +6,7 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
@@ -153,7 +154,7 @@ public class KubeConfigWriter {
                     .cmdAsSingleString(String.format("%s config set-cluster %s --server=%s %s",
                             KUBECTL_BINARY,
                             getClusterNameOrDefault(),
-                            serverUrl,
+                            getServerUrl(),
                             tlsConfigArgs))
                     .stdout(launcher.getListener())
                     .join();
@@ -177,7 +178,7 @@ public class KubeConfigWriter {
         String credentialsArgs;
         int sensitiveFieldsCount = 1;
         if (credentials instanceof TokenProducer) {
-            credentialsArgs = "--token=\"" + ((TokenProducer) credentials).getToken(serverUrl, null, true) + "\"";
+            credentialsArgs = "--token=\"" + ((TokenProducer) credentials).getToken(getServerUrl(), null, true) + "\"";
         } else if (credentials instanceof StringCredentials) {
             credentialsArgs = "--token=\"" + ((StringCredentials) credentials).getSecret() + "\"";
         } else if (credentials instanceof UsernamePasswordCredentials) {
@@ -415,5 +416,15 @@ public class KubeConfigWriter {
             return CLUSTERNAME;
         }
         return this.clusterName;
+    }
+
+    /**
+     * Returns a serverUrl with interpolated environment variables
+     *
+     * @return serverUrl
+     */
+    private String getServerUrl() throws IOException, InterruptedException {
+        final EnvVars env = build.getEnvironment(launcher.getListener());
+        return env.expand(serverUrl);
     }
 }
