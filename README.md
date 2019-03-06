@@ -4,11 +4,12 @@
 [![coveralls](https://coveralls.io/repos/github/jenkinsci/kubernetes-cli-plugin/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/kubernetes-cli-plugin?branch=master)
 
 Allows you to configure [kubectl][kubectl] in your job to interact with Kubernetes clusters.
-Any tool built on top of `kubectl` can then be used from your pipelines, e.g. [kubernetes-deploy][kubernetes-deploy] to perform deployments.
+Any tool built on top of `kubectl` can then be used from your pipelines to perform deployments, e.g. [kubernetes-deploy][kubernetes-deploy].
 
-Initially extracted and rewritten from the [Kubernetes Plugin][kubernetes-plugin].
+*Initially extracted and rewritten from the [Kubernetes Plugin][kubernetes-plugin].*
 
 ```groovy
+// Example when used in a pipeline
 node {
   stage('Apply Kubernetes files') {
     withKubeConfig([credentialsId: 'user1', serverUrl: 'https://api.k8s.my-company.com']) {
@@ -24,15 +25,14 @@ node {
 
 ## Supported credentials
 The following types of credentials are supported and can be used to authenticate against Kubernetes clusters:
+* Token, as secrets (see [Plain Credentials plugin][plain-credentials-plugin])
+* Plain KubeConfig files (see [Plain Credentials plugin][plain-credentials-plugin])
 * Username and Password (see [Credentials plugin][credentials-plugin])
 * Certificates (see [Credentials plugin][credentials-plugin])
-* Plain KubeConfig files (see [Plain Credentials plugin][plain-credentials-plugin])
-* Token, as secrets (see [Plain Credentials plugin][plain-credentials-plugin])
 * OpenShift OAuth tokens, as secrets (see [Kubernetes Credentials plugin][kubernetes-credentials-plugin])
 
 ## Quick usage guide
-
-The parameters have a slightly different effect depending if a plain KubeConfig file is provided or not.
+The parameters have a slightly different effect depending if a plain KubeConfig file is provided.
 
 ### Parameters (without KubeConfig file)
 | Name            | Mandatory | Description   |
@@ -46,7 +46,7 @@ The parameters have a slightly different effect depending if a plain KubeConfig 
 
 ### Parameters (with KubeConfig file)
 
-The plugin writes the plain KubeConfig file and doesn't change any other field if only `credentialsId` is provided.
+The plugin writes the plain KubeConfig file and doesn't change any other field if only `credentialsId` is filled.
 The recommended way to use a single KubeConfig file with multiples clusters, users, and default namespaces is to
 configure a Context for each of them, and use the `contextName` parameter to switch between them (see [Kubernetes documentation][multi-clusters]).
 
@@ -60,9 +60,9 @@ configure a Context for each of them, and use the `contextName` parameter to swi
 | `contextName`   | no        | Switch the current Context to this name. The Context must already exist in the KubeConfig file. |
 
 
-### Pipeline usage
+### Using the plugin in a Pipeline
 The `kubernetes-cli` plugin provides the function `withKubeConfig()` for Jenkins Pipeline support.
-You can go to the *Snippet Generator* page under *Pipeline Syntax* section in Jenkins, select
+You can go to the *Snippet Generator* page under the *Pipeline Syntax* section in Jenkins, select
 *withKubeConfig: Setup Kubernetes CLI* from the *Sample Step* dropdown, and it will provide you configuration
 interface for the plugin. After filling the entries and click *Generate Pipeline Script* button, you will get the sample scripts which can be used
 in your Pipeline definition.
@@ -84,19 +84,41 @@ node {
 }
 ```
 
-### From the web interface
-1. Within the Jenkins dashboard, select a Job and then select Configure
+### Using the plugin from the web interface
+1. Within the Jenkins dashboard, select a Job and then select "Configure"
 2. Scroll down and click the "Add build step" dropdown
 3. Select "Configure Kubernetes CLI (kubectl)"
 4. In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
 
 ![webui](img/webui.png)
 
-## Reporting an issue
-Please file bug reports directly on the Jenkins [issue tracker][issue-tracker]
+## Generating Kubernetes credentials
+The following example describes how you could use the token of a `ServiceAccount` to access the Kubernetes cluster from Jenkins.
+The result depends of course on the permissions you have.
 
+```bash
+# Create a ServiceAccount named `jenkins-robot` in a given namespace.
+$ kubectl -n <namespace> create serviceaccount jenkins-robot
 
-## Building and Testing
+# The next line gives `jenkins-robot` administator permissions for this namespace.
+# * You can make it an admin over all namespaces by creating a `ClusterRoleBinding` instead of a `RoleBinding`.
+# * You can also give it different permissions by binding it to a different `(Cluster)Role`.
+$ kubectl -n <namespace> create rolebinding jenkins-robot-binding --clusterrole=cluster-admin --serviceaccount=jenkins-robot
+
+# Get the name of the token that was automatically generated for the ServiceAccount `jenkins-robot`.
+$ kubectl -n <namespace> get serviceaccount jenkins-robot -o go-template --template='{{range .secrets}}{{.name}}{{"\n"}}{{end}}'
+jenkins-main-robot-token-d6d8z
+
+# Retrieve the token and decode it using base64.
+$ kubectl -n <namespace> get secrets jenkins-robot-token-d6d8z -o go-template --template '{{index .data "token"}}' | base64 -D
+eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2V[...]
+```
+
+On Jenkins, navigate in the folder you want to add the token in, or go on the main page.
+Then click on the "Credentials" item in the left menu and find or create the "Domain" you want.
+Finally, paste your token into a `Secret text` credential. The ID is the `credentialsId` you need to use in the plugin configuration.
+
+## Building and testing
 To build the extension, run:
 ```bash
 mvn clean package
