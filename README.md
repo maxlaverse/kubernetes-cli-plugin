@@ -119,7 +119,9 @@ On Jenkins, navigate in the folder you want to add the token in, or go on the ma
 Then click on the "Credentials" item in the left menu and find or create the "Domain" you want.
 Finally, paste your token into a `Secret text` credential. The ID is the `credentialsId` you need to use in the plugin configuration.
 
-## Building and testing
+## Development
+
+### Building and testing
 To build the extension, run:
 ```bash
 mvn clean package
@@ -135,9 +137,6 @@ mvn clean test
 ```bash
 mvn release:prepare release:perform
 ```
-
-## Release
-Refer to the [CHANGELOG](CHANGELOG.md) in the plugin repository.
 
 [travis-config]:.travis.yml
 [credentials-plugin]:https://github.com/jenkinsci/credentials-plugin
