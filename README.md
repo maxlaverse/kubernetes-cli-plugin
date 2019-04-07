@@ -2,6 +2,7 @@
 
 [![travis-ci](https://travis-ci.org/jenkinsci/kubernetes-cli-plugin.svg?branch=master)](https://travis-ci.org/jenkinsci/kubernetes-cli-plugin)
 [![coveralls](https://coveralls.io/repos/github/jenkinsci/kubernetes-cli-plugin/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/kubernetes-cli-plugin?branch=master)
+![Jenkins Plugin installs](https://img.shields.io/jenkins/plugin/i/kubernetes-cli.svg)
 
 Allows you to configure [kubectl][kubectl] in your job to interact with Kubernetes clusters.
 Any tool built on top of `kubectl` can then be used from your pipelines to perform deployments, e.g. [kubernetes-deploy][kubernetes-deploy].
