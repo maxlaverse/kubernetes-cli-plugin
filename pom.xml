@@ -42,7 +42,7 @@
     <jenkins-credentials.version>2.1.19</jenkins-credentials.version>
     <jenkins-env-inject.version>2.1.3</jenkins-env-inject.version>
     <jenkins-plain-credentials.version>1.3</jenkins-plain-credentials.version>
-    <jenkins-structs.version>1.6</jenkins-structs.version>
+    <jenkins-structs.version>1.19</jenkins-structs.version>
     <jenkins-workflow-cps.version>2.29</jenkins-workflow-cps.version>
     <jenkins-workflow-step-api.version>2.11</jenkins-workflow-step-api.version>
     <jenkins-workflow-support.version>2.14</jenkins-workflow-support.version>
