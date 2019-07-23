@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.7.0
+-----
+* Update credentials plugin from 2.1.7 to 2.1.19 (2.2.0) CVE-2019-10320 [#30](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/30)
+* Drop support for 1.8,1.9 - Test for 1.15 [#31](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/31)
+
 1.6.0
 -----
 * Resolve environment variables in serverUrl for Freestyle jobs [#26](https://github.com/jenkinsci/kubernetes-cli-plugin/pull/26)
