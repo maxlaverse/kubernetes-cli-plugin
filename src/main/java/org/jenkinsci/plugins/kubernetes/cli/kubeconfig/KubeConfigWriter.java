@@ -191,8 +191,8 @@ public class KubeConfigWriter {
             CertificateHelper.extractFromCertificate((StandardCertificateCredentials) credentials, clientCrtFile, clientKeyFile);
             tempFiles.add(clientCrtFile.getRemote());
             tempFiles.add(clientKeyFile.getRemote());
-            credentialsArgs = "--embed-certs=true --client-certificate=" + clientCrtFile.getRemote() + " --client-key="
-                    + clientKeyFile.getRemote();
+            credentialsArgs = "--embed-certs=true --client-certificate=\"" + clientCrtFile.getRemote() + "\" --client-key=\""
+                    + clientKeyFile.getRemote() + "\"";
         } else {
             throw new AbortException("Unsupported Credentials type " + credentials.getClass().getName());
         }
