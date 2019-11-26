@@ -113,7 +113,7 @@ $ kubectl -n <namespace> get serviceaccount jenkins-robot -o go-template --templ
 jenkins-robot-token-d6d8z
 
 # Retrieve the token and decode it using base64.
-$ kubectl -n <namespace> get secrets jenkins-robot-token-d6d8z -o go-template --template '{{index .data "token"}}' | base64 -D
+$ kubectl -n <namespace> get secrets jenkins-robot-token-d6d8z -o go-template --template '{{index .data "token"}}' | base64 -d
 eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2V[...]
 ```
 
