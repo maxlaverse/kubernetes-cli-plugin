@@ -183,18 +183,4 @@ public class KubectlBuildStep extends Step {
         }
     }
 
-    static final class KubeConfigExpander extends EnvironmentExpander {
-
-        private final Map<String, String> envOverride;
-
-        KubeConfigExpander(String kubeConfigPath) {
-            this.envOverride = new HashMap<>();
-            this.envOverride.put(KubeConfigWriter.ENV_VARIABLE_NAME, kubeConfigPath);
-        }
-
-        @Override
-        public void expand(EnvVars env) throws IOException, InterruptedException {
-            env.overrideAll(envOverride);
-        }
-    }
 }
