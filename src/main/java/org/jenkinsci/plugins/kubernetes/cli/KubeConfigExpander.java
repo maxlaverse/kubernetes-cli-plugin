@@ -2,7 +2,7 @@ package org.jenkinsci.plugins.kubernetes.cli;
 
 import hudson.EnvVars;
 import org.jenkinsci.plugins.workflow.steps.EnvironmentExpander;
-
+import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,13 +13,12 @@ import java.util.Map;
 final class KubeConfigExpander extends EnvironmentExpander {
 
     private static final long serialVersionUID = 1;
-    private static final String KUBECONFIG = "KUBECONFIG";
 
     private final Map<String, String> overrides;
 
     KubeConfigExpander(String path) {
         this.overrides = new HashMap<>();
-        this.overrides.put(KUBECONFIG, path);
+        this.overrides.put(KubeConfigWriter.ENV_VARIABLE_NAME, path);
     }
 
     @Override
