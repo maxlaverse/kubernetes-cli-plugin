@@ -6,7 +6,6 @@ import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.google.common.base.Strings;
 import hudson.Extension;
@@ -27,13 +26,20 @@ import org.kohsuke.stapler.DataBoundSetter;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.net.URI;
-import java.util.List;
 
 /**
  * Necessary information for configuring a single registry
  */
 public class KubectlCredential extends AbstractDescribableImpl<KubectlCredential> {
+    // List of supported credentials
+    public static CredentialsMatcher supportedCredentials = CredentialsMatchers.anyOf(
+            CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
+            CredentialsMatchers.instanceOf(TokenProducer.class),
+            CredentialsMatchers.instanceOf(StringCredentials.class),
+            CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
+            CredentialsMatchers.instanceOf(FileCredentials.class)
+    );
+
     @DataBoundSetter
     public String serverUrl;
 
@@ -63,15 +69,6 @@ public class KubectlCredential extends AbstractDescribableImpl<KubectlCredential
             return "";
         }
 
-        // List of supported credentials
-        private static CredentialsMatcher matcher = CredentialsMatchers.anyOf(
-                CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
-                CredentialsMatchers.instanceOf(TokenProducer.class),
-                CredentialsMatchers.instanceOf(StringCredentials.class),
-                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
-                CredentialsMatchers.instanceOf(FileCredentials.class)
-        );
-
         public ListBoxModel doFillCredentialsIdItems(@Nonnull @AncestorInPath Item item, @QueryParameter String serverUrl) {
             return new StandardListBoxModel()
                     .includeEmptyValue()
@@ -80,7 +77,7 @@ public class KubectlCredential extends AbstractDescribableImpl<KubectlCredential
                             item,
                             StandardCredentials.class,
                             URIRequirementBuilder.fromUri(serverUrl).build(),
-                            matcher);
+                            supportedCredentials);
         }
 
         public FormValidation doCheckCredentialsId(@QueryParameter String credentialsId) throws IOException, ServletException {

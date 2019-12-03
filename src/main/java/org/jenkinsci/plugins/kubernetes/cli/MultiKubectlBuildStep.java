@@ -33,90 +33,19 @@ import java.util.stream.Collectors;
 
 
 public class MultiKubectlBuildStep extends Step {
-    final public List<KubectlCredential> kubectlCredentials;
+    final transient public List<KubectlCredential> kubectlCredentials;
 
     @DataBoundConstructor
     public MultiKubectlBuildStep(List<KubectlCredential> credentials) {
         if (credentials == null || credentials.size() == 0) {
-            throw new RuntimeException("Credentials list should cannot be empty");
+            throw new RuntimeException("Credentials list cannot be empty");
         }
         this.kubectlCredentials = credentials;
     }
 
     @Override
     public final StepExecution start(StepContext context) throws Exception {
-        return new ExecutionImpl(this, context);
-    }
-
-    public static class ExecutionImpl extends AbstractStepExecutionImpl {
-
-        private static final long serialVersionUID = 1L;
-        private transient MultiKubectlBuildStep step;
-
-        public ExecutionImpl(MultiKubectlBuildStep step, StepContext context) {
-            super(context);
-            this.step = step;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean start() throws Exception {
-            List<String> configFiles = new ArrayList<String>();
-
-            for(KubectlCredential cred: step.kubectlCredentials) {
-                KubeConfigWriter kubeConfigWriter = KubeConfigWriterFactory.get(
-                        cred.serverUrl,
-                        cred.credentialsId,
-                        cred.caCertificate,
-                        cred.clusterName,
-                        cred.contextName,
-                        cred.namespace,
-                        getContext());
-
-                configFiles.add(kubeConfigWriter.writeKubeConfig());
-            }
-
-            // Prepare a new environment
-            String configFileList = String.join(File.pathSeparator, configFiles);
-            EnvironmentExpander envExpander = EnvironmentExpander.merge(
-                    getContext().get(EnvironmentExpander.class),
-                    new KubeConfigExpander(configFileList));
-
-            // Execute the commands in the body within this environment
-            getContext().newBodyInvoker()
-                    .withContext(envExpander)
-                    .withCallback(new Callback(configFiles))
-                    .start();
-
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void stop(@Nonnull Throwable cause) throws Exception {
-            getContext().onFailure(cause);
-        }
-    }
-
-    private static final class Callback extends BodyExecutionCallback.TailCall {
-        private static final long serialVersionUID = 1L;
-        private final List<String> configFiles;
-
-        Callback(List<String> configFiles) {
-            this.configFiles = configFiles;
-        }
-
-        protected void finished(StepContext context) throws Exception {
-            for(String configFile : configFiles) {
-                context.get(FilePath.class).child(configFile).delete();
-            }
-            context.get(TaskListener.class).getLogger().println("kubectl configuration cleaned up");
-        }
-
+        return new GenericBuildStep(this.kubectlCredentials, context);
     }
 
     @Extension

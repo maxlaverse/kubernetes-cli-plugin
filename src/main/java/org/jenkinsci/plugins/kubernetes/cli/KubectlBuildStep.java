@@ -27,10 +27,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author Max Laverse
@@ -61,87 +58,22 @@ public class KubectlBuildStep extends Step {
 
     @Override
     public final StepExecution start(StepContext context) throws Exception {
-        return new ExecutionImpl(this, context);
-    }
+        KubectlCredential cred = new KubectlCredential();
+        cred.serverUrl = this.serverUrl;
+        cred.credentialsId = this.credentialsId;
+        cred.caCertificate = this.caCertificate;
+        cred.contextName = this.contextName;
+        cred.clusterName = this.clusterName;
+        cred.namespace = this.namespace;
 
-    public static class ExecutionImpl extends AbstractStepExecutionImpl {
+        List<KubectlCredential> list = new ArrayList<KubectlCredential>();
+        list.add(cred);
 
-        private static final long serialVersionUID = 1L;
-        private transient KubectlBuildStep step;
-
-        public ExecutionImpl(KubectlBuildStep step, StepContext context) {
-            super(context);
-            this.step = step;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean start() throws Exception {
-            KubeConfigWriter kubeConfigWriter = KubeConfigWriterFactory.get(
-                    step.serverUrl,
-                    step.credentialsId,
-                    step.caCertificate,
-                    step.clusterName,
-                    step.contextName,
-                    step.namespace,
-                    getContext());
-
-            // Write config
-            String configFile = kubeConfigWriter.writeKubeConfig();
-
-            // Prepare a new environment
-            EnvironmentExpander envExpander = EnvironmentExpander.merge(
-                    getContext().get(EnvironmentExpander.class),
-                    new KubeConfigExpander(configFile));
-
-            // Execute the commands in the body within this environment
-            getContext().newBodyInvoker()
-                    .withContext(envExpander)
-                    .withCallback(new Callback(configFile))
-                    .start();
-
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void stop(@Nonnull Throwable cause) throws Exception {
-            getContext().onFailure(cause);
-        }
-
-    }
-
-    private static final class Callback extends BodyExecutionCallback.TailCall {
-
-        private static final long serialVersionUID = 1L;
-        private final String configFile;
-
-        Callback(String configFile) {
-            this.configFile = configFile;
-        }
-
-        protected void finished(StepContext context) throws Exception {
-            context.get(FilePath.class).child(configFile).delete();
-            context.get(TaskListener.class).getLogger().println("kubectl configuration cleaned up");
-        }
-
+        return new GenericBuildStep(list, context);
     }
 
     @Extension
     public static class DescriptorImpl extends StepDescriptor {
-        // List of supported credentials
-        private static CredentialsMatcher matcher = CredentialsMatchers.anyOf(
-                CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
-                CredentialsMatchers.instanceOf(TokenProducer.class),
-                CredentialsMatchers.instanceOf(StringCredentials.class),
-                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
-                CredentialsMatchers.instanceOf(FileCredentials.class)
-        );
-
         /**
          * {@inheritDoc}
          */
@@ -179,7 +111,7 @@ public class KubectlBuildStep extends Step {
                             item,
                             StandardCredentials.class,
                             URIRequirementBuilder.fromUri(serverUrl).build(),
-                            matcher);
+                            KubectlCredential.supportedCredentials);
         }
     }
 
