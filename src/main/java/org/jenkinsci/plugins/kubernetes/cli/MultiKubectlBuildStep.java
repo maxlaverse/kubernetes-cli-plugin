@@ -78,9 +78,8 @@ public class MultiKubectlBuildStep extends Step {
                 configFiles.add(kubeConfigWriter.writeKubeConfig());
             }
 
-            String configFileList = String.join(File.pathSeparator, configFiles);
-
             // Prepare a new environment
+            String configFileList = String.join(File.pathSeparator, configFiles);
             EnvironmentExpander envExpander = EnvironmentExpander.merge(
                     getContext().get(EnvironmentExpander.class),
                     new KubeConfigExpander(configFileList));
@@ -88,7 +87,7 @@ public class MultiKubectlBuildStep extends Step {
             // Execute the commands in the body within this environment
             getContext().newBodyInvoker()
                     .withContext(envExpander)
-                    .withCallback(new Callback(configFileList))
+                    .withCallback(new Callback(configFiles))
                     .start();
 
             return false;
@@ -105,14 +104,16 @@ public class MultiKubectlBuildStep extends Step {
 
     private static final class Callback extends BodyExecutionCallback.TailCall {
         private static final long serialVersionUID = 1L;
-        private final String configFile;
+        private final List<String> configFiles;
 
-        Callback(String configFile) {
-            this.configFile = configFile;
+        Callback(List<String> configFiles) {
+            this.configFiles = configFiles;
         }
 
         protected void finished(StepContext context) throws Exception {
-            context.get(FilePath.class).child(configFile).delete();
+            for(String configFile : configFiles) {
+                context.get(FilePath.class).child(configFile).delete();
+            }
             context.get(TaskListener.class).getLogger().println("kubectl configuration cleaned up");
         }
 
