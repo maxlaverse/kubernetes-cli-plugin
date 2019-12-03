@@ -95,6 +95,26 @@ node {
 
 ![webui](img/webui.png)
 
+### Usage with multiple credentails
+
+If you need to use more than one credential at the same time, you can use `withMultiKubeConfigs`. It takes an array of the
+parameters as described for `withKubeConfig`, e.g.:
+
+```groovy
+node {
+  stage('Dump merged config') {
+    withMultiKubeConfigs([
+        [credentialsId: '<credential-id-1>', serverUrl: '<api-server-address>'],
+        [credentialsId: '<credential-id-2>', contextName: '<context-name>']
+    ]) {
+      sh 'kubectl view config'
+    }
+  }
+}
+```
+
+The merging is done by `kubectl` itself, refer to its documentation for details.
+
 ## Generating Kubernetes credentials
 The following example describes how you could use the token of a `ServiceAccount` to access the Kubernetes cluster from Jenkins.
 The result depends of course on the permissions you have.

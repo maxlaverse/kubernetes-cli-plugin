@@ -31,6 +31,7 @@ import java.util.stream.Stream;
  */
 public class KubectlTestBase {
     protected static final String CREDENTIAL_ID = "cred1234";
+    protected static final String SECONDARY_CREDENTIAL_ID = "cred9999";
     protected static final String PASSPHRASE = "test";
     protected static final String USERNAME_WITH_SPACE = "bob with-userspace";
     protected static final String USERNAME = "bob";
@@ -117,6 +118,7 @@ public class KubectlTestBase {
     }
 
     protected FileCredentials fileCredential(String credentialId) throws UnsupportedEncodingException {
+        String clusterName = credentialId == "cred1234" ? "test-sample" : credentialId;
         return new FileCredentialsImpl(CredentialsScope.GLOBAL,
                 credentialId,
                 "sample",
@@ -125,14 +127,14 @@ public class KubectlTestBase {
                         "apiVersion: v1\n" +
                         "clusters:\n" +
                         "- cluster:\n" +
-                        "  name: test-sample\n" +
+                        "  name: " + clusterName + "\n" +
                         "contexts:\n" +
                         "- context:\n" +
-                        "    cluster: test-sample\n" +
-                        "  name: test-sample\n" +
+                        "    cluster: " + clusterName + "\n" +
+                        "  name: " + clusterName + "\n" +
                         "- context:\n" +
                         "  name: minikube\n" +
-                        "current-context: test-sample\n").getBytes("UTF-8")));
+                        "current-context: "+clusterName+"\n").getBytes("UTF-8")));
     }
 
     protected FakeBearerTokenCredentialImpl tokenCredential(String credentialId) {
