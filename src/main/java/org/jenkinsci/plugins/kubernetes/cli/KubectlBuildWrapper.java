@@ -87,15 +87,6 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
 
     @Extension
     public static class DescriptorImpl extends BuildWrapperDescriptor {
-        // List of supported credentials
-        private static CredentialsMatcher matcher = CredentialsMatchers.anyOf(
-                CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
-                CredentialsMatchers.instanceOf(TokenProducer.class),
-                CredentialsMatchers.instanceOf(StringCredentials.class),
-                CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
-                CredentialsMatchers.instanceOf(FileCredentials.class)
-        );
-
         @Override
         public boolean isApplicable(AbstractProject<?, ?> item) {
             return true;
@@ -114,7 +105,7 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
                             item,
                             StandardCredentials.class,
                             URIRequirementBuilder.fromUri(serverUrl).build(),
-                            matcher);
+                            KubectlCredential.supportedCredentials);
         }
     }
 
