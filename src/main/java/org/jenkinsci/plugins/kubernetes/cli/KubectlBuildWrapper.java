@@ -30,6 +30,8 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -64,25 +66,20 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
                       Launcher launcher,
                       TaskListener listener,
                       EnvVars initialEnvironment) throws IOException, InterruptedException {
-        KubeConfigWriter kubeConfigWriter = KubeConfigWriterFactory.get(
-                this.serverUrl,
-                this.credentialsId,
-                this.caCertificate,
-                this.clusterName,
-                this.contextName,
-                this.namespace,
-                workspace,
-                launcher,
-                build);
 
-        // Write the kubeconfig file
-        String configFile = kubeConfigWriter.writeKubeConfig();
+        KubectlCredential cred = new KubectlCredential();
+        cred.serverUrl = this.serverUrl;
+        cred.credentialsId = this.credentialsId;
+        cred.caCertificate = this.caCertificate;
+        cred.contextName = this.contextName;
+        cred.clusterName = this.clusterName;
+        cred.namespace = this.namespace;
 
-        // Remove it when the build is finished
-        context.setDisposer(new CleanupDisposer(configFile));
+        List<KubectlCredential> list = new ArrayList<KubectlCredential>();
+        list.add(cred);
 
-        // Set environment for the kubectl calls to find the configuration
-        context.env(KubeConfigWriter.ENV_VARIABLE_NAME, configFile);
+        MultiKubectlBuildWrapper bw = new MultiKubectlBuildWrapper(list);
+        bw.setUp(context, build, workspace, launcher, listener, initialEnvironment);
     }
 
     @Extension
@@ -106,28 +103,6 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
                             StandardCredentials.class,
                             URIRequirementBuilder.fromUri(serverUrl).build(),
                             KubectlCredential.supportedCredentials);
-        }
-    }
-
-    /**
-     * @author Max Laverse
-     */
-    public static class CleanupDisposer extends Disposer {
-
-        private static final long serialVersionUID = 1L;
-        private String fileToBeRemoved;
-
-        public CleanupDisposer(String file) {
-            this.fileToBeRemoved = file;
-        }
-
-        @Override
-        public void tearDown(Run<?, ?> build,
-                             FilePath workspace,
-                             Launcher launcher,
-                             TaskListener listener) throws IOException, InterruptedException {
-            workspace.child(fileToBeRemoved).delete();
-            listener.getLogger().println("kubectl configuration cleaned up");
         }
     }
 }
