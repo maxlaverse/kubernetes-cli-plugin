@@ -87,15 +87,7 @@ node {
 }
 ```
 
-### Using the plugin from the web interface
-1. Within the Jenkins dashboard, select a Job and then select "Configure"
-2. Scroll down and click the "Add build step" dropdown
-3. Select "Configure Kubernetes CLI (kubectl)"
-4. In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
-
-![webui](img/webui.png)
-
-### Usage with multiple credentails
+##### Usage with multiple credentails
 
 If you need to use more than one credential at the same time, you can use `withMultiKubeConfigs`. It takes an array of the
 parameters as described for `withKubeConfig`, e.g.:
@@ -114,6 +106,15 @@ node {
 ```
 
 The merging is done by `kubectl` itself, refer to its documentation for details.
+
+### Using the plugin from the web interface
+1. Within the Jenkins dashboard, select a Job and then select "Configure"
+2. Scroll down to the "Build Environment" section
+3. Select "Configure Kubernetes CLI (kubectl) with multiple credentials"
+4. In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
+5. Repeat 4 as necessary
+
+![webui](img/webui.png)
 
 ## Generating Kubernetes credentials
 The following example describes how you could use the token of a `ServiceAccount` to access the Kubernetes cluster from Jenkins.

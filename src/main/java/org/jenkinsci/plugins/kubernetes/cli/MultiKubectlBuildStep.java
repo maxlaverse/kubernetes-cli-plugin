@@ -36,11 +36,11 @@ public class MultiKubectlBuildStep extends Step {
     final transient public List<KubectlCredential> kubectlCredentials;
 
     @DataBoundConstructor
-    public MultiKubectlBuildStep(List<KubectlCredential> credentials) {
-        if (credentials == null || credentials.size() == 0) {
+    public MultiKubectlBuildStep(List<KubectlCredential> kubectlCredentials) {
+        if (kubectlCredentials == null || kubectlCredentials.size() == 0) {
             throw new RuntimeException("Credentials list cannot be empty");
         }
-        this.kubectlCredentials = credentials;
+        this.kubectlCredentials = kubectlCredentials;
     }
 
     @Override

@@ -91,7 +91,7 @@ public class KubectlBuildWrapper extends SimpleBuildWrapper {
 
         @Override
         public String getDisplayName() {
-            return "Configure Kubernetes CLI (kubectl)";
+            return "Configure Kubernetes CLI (kubectl) (deprecated, use the multi credentials one instead)";
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item item, @QueryParameter String serverUrl) {
