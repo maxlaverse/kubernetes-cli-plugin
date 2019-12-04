@@ -25,4 +25,9 @@
     <f:textarea/>
   </f:entry>
 
+  <f:entry title="">
+    <div align="right" class="show-if-not-only">
+      <f:repeatableDeleteButton />
+    </div>
+  </f:entry>
 </j:jelly>
