@@ -38,11 +38,11 @@ public class MultiKubectlBuildWrapper extends SimpleBuildWrapper {
     final transient public List<KubectlCredential> kubectlCredentials;
 
     @DataBoundConstructor
-    public MultiKubectlBuildWrapper(List<KubectlCredential> credentials) {
-        if (credentials == null || credentials.size() == 0) {
+    public MultiKubectlBuildWrapper(List<KubectlCredential> kubectlCredentials) {
+        if (kubectlCredentials == null || kubectlCredentials.size() == 0) {
             throw new RuntimeException("Credentials list cannot be empty");
         }
-        this.kubectlCredentials = credentials;
+        this.kubectlCredentials = kubectlCredentials;
     }
 
     @Override
