@@ -276,7 +276,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         store.addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
         store.addCredentials(Domain.global(), fileCredential(SECONDARY_CREDENTIAL_ID));
 
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "multiKubeConfig");
         p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMultiDumpMinimal.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
@@ -286,7 +286,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
 
-        assertEquals( "apiVersion: v1\n" +
+        assertEquals("apiVersion: v1\n" +
                 "clusters:\n" +
                 "- cluster:\n" +
                 "    server: \"\"\n" +
@@ -313,6 +313,52 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "users: []", configDumpContent);
     }
 
+    @Test
+    public void testMultiKubeConfigUsernames() throws Exception {
+        CredentialsStore store = CredentialsProvider.lookupStores(r.jenkins).iterator().next();
+        store.addCredentials(Domain.global(), secretCredential(CREDENTIAL_ID));
+        store.addCredentials(Domain.global(), secretCredential(SECONDARY_CREDENTIAL_ID));
+
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "multiKubeConfigUsernames");
+        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMultiDumpUsernames.groovy"), true));
+        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+        assertNotNull(b);
+        r.assertBuildStatusSuccess(r.waitForCompletion(b));
+
+        FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
+        assertTrue(configDump.exists());
+        String configDumpContent = configDump.readToString().trim();
+
+        assertEquals("apiVersion: v1\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    insecure-skip-tls-verify: true\n" +
+                "    server: https://localhost:1234\n" +
+                "  name: clus1234\n" +
+                "- cluster:\n" +
+                "    insecure-skip-tls-verify: true\n" +
+                "    server: https://localhost:9999\n" +
+                "  name: clus9999\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: clus1234\n" +
+                "    user: cred1234\n" +
+                "  name: cont1234\n" +
+                "- context:\n" +
+                "    cluster: clus9999\n" +
+                "    user: cred9999\n" +
+                "  name: cont9999\n" +
+                "current-context: cont1234\n" +
+                "kind: Config\n" +
+                "preferences: {}\n" +
+                "users:\n" +
+                "- name: cred1234\n" +
+                "  user:\n" +
+                "    token: s3cr3t\n" +
+                "- name: cred9999\n" +
+                "  user:\n" +
+                "    token: s3cr3t", configDumpContent);
+    }
 
     @Test
     public void testMultiKubeConfigWithServer() throws Exception {
@@ -320,7 +366,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         store.addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
         store.addCredentials(Domain.global(), fileCredential(SECONDARY_CREDENTIAL_ID));
 
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "fileCredential");
+        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "multiKubeConfigWithServer");
         p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMultiDumpWithServer.groovy"), true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);

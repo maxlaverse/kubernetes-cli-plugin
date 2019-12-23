@@ -34,7 +34,6 @@ public class KubeConfigWriter {
     public static final String ENV_VARIABLE_NAME = "KUBECONFIG";
 
     private static final String KUBECTL_BINARY = "kubectl";
-    private static final String USERNAME = "cluster-admin";
     private static final String DEFAULT_CONTEXTNAME = "k8s";
     private static final String CLUSTERNAME = "k8s";
 
@@ -103,9 +102,9 @@ public class KubeConfigWriter {
             setCluster(configFile.getRemote());
             setCredentials(configFile.getRemote(), credentials);
             if (wasNamespaceProvided()) {
-                setFullContext(configFile.getRemote(), namespace);
+                setFullContext(configFile.getRemote(), credentials.getId(), namespace);
             } else {
-                setFullContext(configFile.getRemote());
+                setFullContext(configFile.getRemote(), credentials.getId());
             }
             useContext(configFile.getRemote(), getContextNameOrDefault());
         }
@@ -201,7 +200,7 @@ public class KubeConfigWriter {
 
         String[] cmds = QuotedStringTokenizer.tokenize(String.format("%s config set-credentials %s %s",
                 KUBECTL_BINARY,
-                USERNAME,
+                credentials.getId(),
                 credentialsArgs));
 
         int status = launcher.launch()
@@ -224,27 +223,27 @@ public class KubeConfigWriter {
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
-    private void setFullContext(String configFile) throws IOException, InterruptedException {
+    private void setFullContext(String configFile, String username) throws IOException, InterruptedException {
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
                         KUBECTL_BINARY,
                         getContextNameOrDefault(),
                         getClusterNameOrDefault(),
-                        USERNAME))
+                        username))
                 .stdout(launcher.getListener())
                 .join();
         if (status != 0) throw new IOException("Failed to add kubectl context (exit code  " + status + ")");
     }
 
-    private void setFullContext(String configFile, String namespace) throws IOException, InterruptedException {
+    private void setFullContext(String configFile, String username, String namespace) throws IOException, InterruptedException {
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s --namespace=%s",
                         KUBECTL_BINARY,
                         getContextNameOrDefault(),
                         getClusterNameOrDefault(),
-                        USERNAME,
+                        username,
                         namespace))
                 .stdout(launcher.getListener())
                 .join();
