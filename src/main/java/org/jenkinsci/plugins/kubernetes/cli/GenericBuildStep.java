@@ -47,6 +47,8 @@ public class GenericBuildStep extends AbstractStepExecutionImpl {
     public boolean start() throws Exception {
         List<String> configFiles = new ArrayList<String>();
 
+        boolean skipUseContext = this.kubectlCredentials.size() >= 2;
+
         for(KubectlCredential cred: this.kubectlCredentials) {
             KubeConfigWriter kubeConfigWriter = KubeConfigWriterFactory.get(
                     cred.serverUrl,
@@ -55,6 +57,7 @@ public class GenericBuildStep extends AbstractStepExecutionImpl {
                     cred.clusterName,
                     cred.contextName,
                     cred.namespace,
+                    skipUseContext,
                     getContext());
 
             configFiles.add(kubeConfigWriter.writeKubeConfig());

@@ -105,7 +105,8 @@ node {
 }
 ```
 
-The merging is done by `kubectl` itself, refer to its documentation for details.
+The merging is done by `kubectl` itself, refer to its documentation for details. When providing more than one credential
+is provided no context will be set by default.
 
 ### Using the plugin from the web interface
 1. Within the Jenkins dashboard, select a Job and then select "Configure"

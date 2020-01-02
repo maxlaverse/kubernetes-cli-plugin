@@ -348,7 +348,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "    cluster: clus9999\n" +
                 "    user: cred9999\n" +
                 "  name: cont9999\n" +
-                "current-context: cont1234\n" +
+                "current-context: \"\"\n" +
                 "kind: Config\n" +
                 "preferences: {}\n" +
                 "users:\n" +

@@ -43,12 +43,13 @@ public class KubeConfigWriter {
     private final String clusterName;
     private final String contextName;
     private final String namespace;
+    private final boolean skipUseContext;
     private final FilePath workspace;
     private final Launcher launcher;
     private final Run<?, ?> build;
 
     public KubeConfigWriter(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                            String caCertificate, String clusterName, String contextName, String namespace, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                            String caCertificate, String clusterName, String contextName, String namespace, boolean skipUseContext, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         this.serverUrl = serverUrl;
         this.credentialsId = credentialsId;
         this.caCertificate = caCertificate;
@@ -58,6 +59,7 @@ public class KubeConfigWriter {
         this.clusterName = clusterName;
         this.contextName = contextName;
         this.namespace = namespace;
+        this.skipUseContext = skipUseContext;
     }
 
     /**
@@ -315,6 +317,9 @@ public class KubeConfigWriter {
      * @throws InterruptedException on file operations
      */
     private void useContext(String configFile, String contextName) throws IOException, InterruptedException {
+        if (skipUseContext) {
+            return;
+        }
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config use-context %s",
