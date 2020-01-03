@@ -47,7 +47,7 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
         FreeStyleBuild b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
-        r.assertLogContains("KUBECONFIG=" + b.getWorkspace() + File.separator + ".kube", b);
+        r.assertLogContains("KUBECONFIG=" + System.getProperty("java.io.tmpdir") + File.separator + "kubernetes-cli-plugin-kube", b);
     }
 
     @Test

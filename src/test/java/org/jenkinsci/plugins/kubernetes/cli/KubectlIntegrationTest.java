@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -233,7 +234,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         r.assertBuildStatusSuccess(r.waitForCompletion(b));
 
         r.assertLogContains("kubectl configuration cleaned up", b);
-        r.assertLogContains("/workspace/kubectl path with spaces/.kube", b);
+        r.assertLogContains("Using temporary file " + System.getProperty("java.io.tmpdir") + File.separator + "kubernetes-cli-plugin-kube", b);
     }
 
     @Test

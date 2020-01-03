@@ -12,6 +12,7 @@ import hudson.Launcher;
 import hudson.model.Run;
 import hudson.util.QuotedStringTokenizer;
 import hudson.util.Secret;
+import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
@@ -75,7 +76,7 @@ public class KubeConfigWriter {
             workspace.mkdirs();
         }
 
-        FilePath configFile = workspace.createTempFile(".kube", "config");
+        FilePath configFile = getTempFilePath("kube", "config");
 
         final StandardCredentials credentials = getCredentials(build);
         if (credentials == null) {
@@ -142,7 +143,7 @@ public class KubeConfigWriter {
             tlsConfigArgs = " --insecure-skip-tls-verify=true";
         } else {
             // Write certificate on disk
-            FilePath caCrtFile = workspace.createTempFile("cert-auth", "crt");
+            FilePath caCrtFile = getTempFilePath("cert-auth", "crt");
             caCrtFile.write(CertificateHelper.wrapCertificate(caCertificate), null);
             filesToBeRemoved.add(caCrtFile.getRemote());
 
@@ -189,8 +190,8 @@ public class KubeConfigWriter {
             credentialsArgs = "--username=\"" + upc.getUsername() + "\" --password=\"" + Secret.toString(upc.getPassword()) + "\"";
         } else if (credentials instanceof StandardCertificateCredentials) {
             sensitiveFieldsCount = 0;
-            FilePath clientCrtFile = workspace.createTempFile("client", "crt");
-            FilePath clientKeyFile = workspace.createTempFile("client", "key");
+            FilePath clientCrtFile = getTempFilePath("client", "crt");
+            FilePath clientKeyFile = getTempFilePath("client", "key");
             CertificateHelper.extractFromCertificate((StandardCertificateCredentials) credentials, clientCrtFile, clientKeyFile);
             tempFiles.add(clientCrtFile.getRemote());
             tempFiles.add(clientKeyFile.getRemote());
@@ -433,4 +434,27 @@ public class KubeConfigWriter {
         final EnvVars env = build.getEnvironment(launcher.getListener());
         return env.expand(serverUrl);
     }
+
+    private FilePath getTempFilePath(String prefix, String suffix) throws IOException, InterruptedException {
+        String tempFolder = workspace.getChannel().call(new ObtainTemporaryFolderCallable());
+        FilePath tempPath = new FilePath(workspace.getChannel(), tempFolder);
+        if (!tempPath.exists()) {
+            launcher.getListener().getLogger().println("creating missing temporary folder to write kube config files");
+            tempPath.mkdirs();
+        }
+
+        return tempPath.createTempFile("kubernetes-cli-plugin-"+prefix, suffix);
+    }
+
+    /**
+     * Used for obtaining the temporary folder for a node.
+     */
+    private static class ObtainTemporaryFolderCallable extends MasterToSlaveCallable<String, IOException> {
+        private static final String TMPDIR__PROPERTY = "java.io.tmpdir";
+        @Override
+        public String call() {
+            return System.getProperty(TMPDIR__PROPERTY);
+        }
+    }
+
 }
