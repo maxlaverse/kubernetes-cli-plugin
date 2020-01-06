@@ -64,7 +64,7 @@ public class MultiKubectlBuildStep extends Step {
          */
         @Override
         public String getFunctionName() {
-            return "withMultiKubeConfigs";
+            return "withKubeCredentials";
         }
 
         /**

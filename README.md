@@ -89,13 +89,13 @@ node {
 
 ##### Usage with multiple credentails
 
-If you need to use more than one credential at the same time, you can use `withMultiKubeConfigs`. It takes an array of the
+If you need to use more than one credential at the same time, you can use `withKubeCredentials`. It takes an array of the
 parameters as described for `withKubeConfig`, e.g.:
 
 ```groovy
 node {
   stage('Dump merged config') {
-    withMultiKubeConfigs([
+    withKubeCredentials([
         [credentialsId: '<credential-id-1>', serverUrl: '<api-server-address>'],
         [credentialsId: '<credential-id-2>', contextName: '<context-name>']
     ]) {
