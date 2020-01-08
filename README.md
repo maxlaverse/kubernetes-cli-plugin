@@ -87,11 +87,33 @@ node {
 }
 ```
 
+##### Usage with multiple credentails
+
+If you need to use more than one credential at the same time, you can use `withKubeCredentials`. It takes an array of the
+parameters as described for `withKubeConfig`, e.g.:
+
+```groovy
+node {
+  stage('Dump merged config') {
+    withKubeCredentials([
+        [credentialsId: '<credential-id-1>', serverUrl: '<api-server-address>'],
+        [credentialsId: '<credential-id-2>', contextName: '<context-name>']
+    ]) {
+      sh 'kubectl view config'
+    }
+  }
+}
+```
+
+The merging is done by `kubectl` itself, refer to its documentation for details. When providing more than one credential
+is provided no context will be set by default.
+
 ### Using the plugin from the web interface
 1. Within the Jenkins dashboard, select a Job and then select "Configure"
-2. Scroll down and click the "Add build step" dropdown
-3. Select "Configure Kubernetes CLI (kubectl)"
+2. Scroll down to the "Build Environment" section
+3. Select "Configure Kubernetes CLI (kubectl) with multiple credentials"
 4. In the "Credential" dropdown, select the credentials to authenticate on the cluster or the kubeconfig stored in Jenkins.
+5. Repeat 4 as necessary
 
 ![webui](img/webui.png)
 

@@ -5,7 +5,7 @@
     <c:select/>
   </f:entry>
 
-  <f:entry field="serverUrl" title="${%Kubernetes server endpoint}">
+  <f:entry field="serverUrl" title="${%Kubernetes API endpoint}">
     <f:textbox/>
   </f:entry>
 
@@ -25,4 +25,9 @@
     <f:textarea/>
   </f:entry>
 
+  <f:entry title="">
+    <div align="right" class="show-if-not-only">
+      <f:repeatableDeleteButton />
+    </div>
+  </f:entry>
 </j:jelly>

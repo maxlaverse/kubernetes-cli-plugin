@@ -26,60 +26,37 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
-/**
- * @author Max Laverse
- */
-public class KubectlBuildStep extends Step {
 
-    @DataBoundSetter
-    public String serverUrl;
-
-    @DataBoundSetter
-    public String credentialsId;
-
-    @DataBoundSetter
-    public String caCertificate;
-
-    @DataBoundSetter
-    public String contextName;
-
-    @DataBoundSetter
-    public String clusterName;
-
-    @DataBoundSetter
-    public String namespace;
+public class MultiKubectlBuildStep extends Step {
+    final transient public List<KubectlCredential> kubectlCredentials;
 
     @DataBoundConstructor
-    public KubectlBuildStep() {
+    public MultiKubectlBuildStep(List<KubectlCredential> kubectlCredentials) {
+        if (kubectlCredentials == null || kubectlCredentials.size() == 0) {
+            throw new RuntimeException("Credentials list cannot be empty");
+        }
+        this.kubectlCredentials = kubectlCredentials;
     }
 
     @Override
     public final StepExecution start(StepContext context) throws Exception {
-        KubectlCredential cred = new KubectlCredential();
-        cred.serverUrl = this.serverUrl;
-        cred.credentialsId = this.credentialsId;
-        cred.caCertificate = this.caCertificate;
-        cred.contextName = this.contextName;
-        cred.clusterName = this.clusterName;
-        cred.namespace = this.namespace;
-
-        List<KubectlCredential> list = new ArrayList<KubectlCredential>();
-        list.add(cred);
-
-        return new GenericBuildStep(list, context);
+        return new GenericBuildStep(this.kubectlCredentials, context);
     }
 
     @Extension
     public static class DescriptorImpl extends StepDescriptor {
+
         /**
          * {@inheritDoc}
          */
         @Override
         public String getDisplayName() {
-            return "Configure Kubernetes CLI (kubectl)";
+            return "Configure Kubernetes CLI (kubectl) with multiple credentials";
         }
 
         /**
@@ -87,7 +64,7 @@ public class KubectlBuildStep extends Step {
          */
         @Override
         public String getFunctionName() {
-            return "withKubeConfig";
+            return "withKubeCredentials";
         }
 
         /**
@@ -103,16 +80,5 @@ public class KubectlBuildStep extends Step {
             return new HashSet<>();
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@Nonnull @AncestorInPath Item item, @QueryParameter String serverUrl) {
-            return new StandardListBoxModel()
-                    .includeEmptyValue()
-                    .includeMatchingAs(
-                            ACL.SYSTEM,
-                            item,
-                            StandardCredentials.class,
-                            URIRequirementBuilder.fromUri(serverUrl).build(),
-                            KubectlCredential.supportedCredentials);
-        }
     }
-
 }

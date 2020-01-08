@@ -5,7 +5,7 @@
     <c:select/>
   </f:entry>
 
-  <f:entry field="serverUrl" title="${%Kubernetes API endpoint}">
+  <f:entry field="serverUrl" title="${%Kubernetes server endpoint}">
     <f:textbox/>
   </f:entry>
 

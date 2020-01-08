@@ -7,32 +7,38 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
-import hudson.EnvVars;
+import com.google.common.base.Strings;
 import hudson.Extension;
-import hudson.FilePath;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
 import hudson.model.Item;
-import hudson.model.TaskListener;
 import hudson.security.ACL;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriter;
-import org.jenkinsci.plugins.kubernetes.cli.kubeconfig.KubeConfigWriterFactory;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
 import org.jenkinsci.plugins.plaincredentials.FileCredentials;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
-import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import javax.annotation.Nonnull;
+import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.*;
 
 /**
- * @author Max Laverse
+ * Necessary information for configuring a single registry
  */
-public class KubectlBuildStep extends Step {
+public class KubectlCredential extends AbstractDescribableImpl<KubectlCredential> {
+    // List of supported credentials
+    public static CredentialsMatcher supportedCredentials = CredentialsMatchers.anyOf(
+            CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
+            CredentialsMatchers.instanceOf(TokenProducer.class),
+            CredentialsMatchers.instanceOf(StringCredentials.class),
+            CredentialsMatchers.instanceOf(StandardCertificateCredentials.class),
+            CredentialsMatchers.instanceOf(FileCredentials.class)
+    );
 
     @DataBoundSetter
     public String serverUrl;
@@ -53,54 +59,14 @@ public class KubectlBuildStep extends Step {
     public String namespace;
 
     @DataBoundConstructor
-    public KubectlBuildStep() {
-    }
-
-    @Override
-    public final StepExecution start(StepContext context) throws Exception {
-        KubectlCredential cred = new KubectlCredential();
-        cred.serverUrl = this.serverUrl;
-        cred.credentialsId = this.credentialsId;
-        cred.caCertificate = this.caCertificate;
-        cred.contextName = this.contextName;
-        cred.clusterName = this.clusterName;
-        cred.namespace = this.namespace;
-
-        List<KubectlCredential> list = new ArrayList<KubectlCredential>();
-        list.add(cred);
-
-        return new GenericBuildStep(list, context);
+    public KubectlCredential() {
     }
 
     @Extension
-    public static class DescriptorImpl extends StepDescriptor {
-        /**
-         * {@inheritDoc}
-         */
+    public static class DescriptorImpl extends Descriptor<KubectlCredential> {
         @Override
         public String getDisplayName() {
-            return "Configure Kubernetes CLI (kubectl)";
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String getFunctionName() {
-            return "withKubeConfig";
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean takesImplicitBlockArgument() {
-            return true;
-        }
-
-        @Override
-        public Set<? extends Class<?>> getRequiredContext() {
-            return new HashSet<>();
+            return "";
         }
 
         public ListBoxModel doFillCredentialsIdItems(@Nonnull @AncestorInPath Item item, @QueryParameter String serverUrl) {
@@ -111,8 +77,14 @@ public class KubectlBuildStep extends Step {
                             item,
                             StandardCredentials.class,
                             URIRequirementBuilder.fromUri(serverUrl).build(),
-                            KubectlCredential.supportedCredentials);
+                            supportedCredentials);
+        }
+
+        public FormValidation doCheckCredentialsId(@QueryParameter String credentialsId) throws IOException, ServletException {
+            if (Strings.isNullOrEmpty(credentialsId)) {
+                return FormValidation.error("The credentialId cannot be empty");
+            }
+            return FormValidation.ok();
         }
     }
-
 }

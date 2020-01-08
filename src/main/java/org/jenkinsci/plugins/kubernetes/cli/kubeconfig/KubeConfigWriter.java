@@ -12,6 +12,7 @@ import hudson.Launcher;
 import hudson.model.Run;
 import hudson.util.QuotedStringTokenizer;
 import hudson.util.Secret;
+import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
@@ -34,7 +35,6 @@ public class KubeConfigWriter {
     public static final String ENV_VARIABLE_NAME = "KUBECONFIG";
 
     private static final String KUBECTL_BINARY = "kubectl";
-    private static final String USERNAME = "cluster-admin";
     private static final String DEFAULT_CONTEXTNAME = "k8s";
     private static final String CLUSTERNAME = "k8s";
 
@@ -44,12 +44,13 @@ public class KubeConfigWriter {
     private final String clusterName;
     private final String contextName;
     private final String namespace;
+    private final boolean skipUseContext;
     private final FilePath workspace;
     private final Launcher launcher;
     private final Run<?, ?> build;
 
     public KubeConfigWriter(@Nonnull String serverUrl, @Nonnull String credentialsId,
-                            String caCertificate, String clusterName, String contextName, String namespace, FilePath workspace, Launcher launcher, Run<?, ?> build) {
+                            String caCertificate, String clusterName, String contextName, String namespace, boolean skipUseContext, FilePath workspace, Launcher launcher, Run<?, ?> build) {
         this.serverUrl = serverUrl;
         this.credentialsId = credentialsId;
         this.caCertificate = caCertificate;
@@ -59,6 +60,7 @@ public class KubeConfigWriter {
         this.clusterName = clusterName;
         this.contextName = contextName;
         this.namespace = namespace;
+        this.skipUseContext = skipUseContext;
     }
 
     /**
@@ -74,7 +76,7 @@ public class KubeConfigWriter {
             workspace.mkdirs();
         }
 
-        FilePath configFile = workspace.createTempFile(".kube", "config");
+        FilePath configFile = getTempFilePath("kube", "config");
 
         final StandardCredentials credentials = getCredentials(build);
         if (credentials == null) {
@@ -103,9 +105,9 @@ public class KubeConfigWriter {
             setCluster(configFile.getRemote());
             setCredentials(configFile.getRemote(), credentials);
             if (wasNamespaceProvided()) {
-                setFullContext(configFile.getRemote(), namespace);
+                setFullContext(configFile.getRemote(), credentials.getId(), namespace);
             } else {
-                setFullContext(configFile.getRemote());
+                setFullContext(configFile.getRemote(), credentials.getId());
             }
             useContext(configFile.getRemote(), getContextNameOrDefault());
         }
@@ -141,7 +143,7 @@ public class KubeConfigWriter {
             tlsConfigArgs = " --insecure-skip-tls-verify=true";
         } else {
             // Write certificate on disk
-            FilePath caCrtFile = workspace.createTempFile("cert-auth", "crt");
+            FilePath caCrtFile = getTempFilePath("cert-auth", "crt");
             caCrtFile.write(CertificateHelper.wrapCertificate(caCertificate), null);
             filesToBeRemoved.add(caCrtFile.getRemote());
 
@@ -188,8 +190,8 @@ public class KubeConfigWriter {
             credentialsArgs = "--username=\"" + upc.getUsername() + "\" --password=\"" + Secret.toString(upc.getPassword()) + "\"";
         } else if (credentials instanceof StandardCertificateCredentials) {
             sensitiveFieldsCount = 0;
-            FilePath clientCrtFile = workspace.createTempFile("client", "crt");
-            FilePath clientKeyFile = workspace.createTempFile("client", "key");
+            FilePath clientCrtFile = getTempFilePath("client", "crt");
+            FilePath clientKeyFile = getTempFilePath("client", "key");
             CertificateHelper.extractFromCertificate((StandardCertificateCredentials) credentials, clientCrtFile, clientKeyFile);
             tempFiles.add(clientCrtFile.getRemote());
             tempFiles.add(clientKeyFile.getRemote());
@@ -201,7 +203,7 @@ public class KubeConfigWriter {
 
         String[] cmds = QuotedStringTokenizer.tokenize(String.format("%s config set-credentials %s %s",
                 KUBECTL_BINARY,
-                USERNAME,
+                credentials.getId(),
                 credentialsArgs));
 
         int status = launcher.launch()
@@ -224,27 +226,27 @@ public class KubeConfigWriter {
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
-    private void setFullContext(String configFile) throws IOException, InterruptedException {
+    private void setFullContext(String configFile, String username) throws IOException, InterruptedException {
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
                         KUBECTL_BINARY,
                         getContextNameOrDefault(),
                         getClusterNameOrDefault(),
-                        USERNAME))
+                        username))
                 .stdout(launcher.getListener())
                 .join();
         if (status != 0) throw new IOException("Failed to add kubectl context (exit code  " + status + ")");
     }
 
-    private void setFullContext(String configFile, String namespace) throws IOException, InterruptedException {
+    private void setFullContext(String configFile, String username, String namespace) throws IOException, InterruptedException {
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s --namespace=%s",
                         KUBECTL_BINARY,
                         getContextNameOrDefault(),
                         getClusterNameOrDefault(),
-                        USERNAME,
+                        username,
                         namespace))
                 .stdout(launcher.getListener())
                 .join();
@@ -316,6 +318,9 @@ public class KubeConfigWriter {
      * @throws InterruptedException on file operations
      */
     private void useContext(String configFile, String contextName) throws IOException, InterruptedException {
+        if (skipUseContext) {
+            return;
+        }
         int status = launcher.launch()
                 .envs(String.format("KUBECONFIG=%s", configFile))
                 .cmdAsSingleString(String.format("%s config use-context %s",
@@ -429,4 +434,27 @@ public class KubeConfigWriter {
         final EnvVars env = build.getEnvironment(launcher.getListener());
         return env.expand(serverUrl);
     }
+
+    private FilePath getTempFilePath(String prefix, String suffix) throws IOException, InterruptedException {
+        String tempFolder = workspace.getChannel().call(new ObtainTemporaryFolderCallable());
+        FilePath tempPath = new FilePath(workspace.getChannel(), tempFolder);
+        if (!tempPath.exists()) {
+            launcher.getListener().getLogger().println("creating missing temporary folder to write kube config files");
+            tempPath.mkdirs();
+        }
+
+        return tempPath.createTempFile("kubernetes-cli-plugin-"+prefix, suffix);
+    }
+
+    /**
+     * Used for obtaining the temporary folder for a node.
+     */
+    private static class ObtainTemporaryFolderCallable extends MasterToSlaveCallable<String, IOException> {
+        private static final String TMPDIR__PROPERTY = "java.io.tmpdir";
+        @Override
+        public String call() {
+            return System.getProperty(TMPDIR__PROPERTY);
+        }
+    }
+
 }
