@@ -53,7 +53,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
-        r.assertLogContains("ERROR: No credentials found for id \"cred1234\"", b);
+        r.assertLogContains("ERROR: Unable to find credentials with id 'cred1234'", b);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
-        r.assertLogContains("ERROR: No credentials defined to setup Kubernetes CLI", b);
+        r.assertLogContains("ERROR: Unable to find credentials with id ''", b);
     }
 
     @Test
@@ -113,7 +113,7 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         waitForResult(b, Result.FAILURE);
-        r.assertLogContains("ERROR: Unsupported Credentials type org.jenkinsci.plugins.kubernetes.cli.utils.UnsupportedCredential", b);
+        r.assertLogContains("ERROR: Unsupported credentials type org.jenkinsci.plugins.kubernetes.cli.utils.UnsupportedCredential", b);
     }
 
     @Test
@@ -154,18 +154,6 @@ public class KubectlBuildStepTest extends KubectlTestBase {
         assertNotNull(b);
         waitForResult(b, Result.SUCCESS);
         r.assertLogNotContains("kubectl, config, set-cluster", b);
-    }
-
-    @Test
-    public void testPlainKubeConfigWithServerUrl() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), fileCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "testWithFileCertificateAndServer");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlMocked.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        waitForResult(b, Result.SUCCESS);
-        r.assertLogContains("kubectl, config, set-cluster", b);
     }
 
     private void waitForResult(WorkflowRun b, Result result) throws Exception {

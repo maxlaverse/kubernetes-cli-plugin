@@ -1,32 +1,32 @@
 package org.jenkinsci.plugins.kubernetes.cli.kubeconfig;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
-import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
-import hudson.util.QuotedStringTokenizer;
-import hudson.util.Secret;
+import io.fabric8.kubernetes.api.model.Cluster;
+import io.fabric8.kubernetes.api.model.ConfigBuilder;
+import io.fabric8.kubernetes.api.model.ConfigFluent;
+import io.fabric8.kubernetes.api.model.NamedCluster;
+import io.fabric8.kubernetes.client.internal.SerializationUtils;
+import jenkins.authentication.tokens.api.AuthenticationTokens;
 import jenkins.security.MasterToSlaveCallable;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.kubernetes.credentials.TokenProducer;
-import org.jenkinsci.plugins.plaincredentials.FileCredentials;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.jenkinsci.plugins.kubernetes.auth.KubernetesAuth;
+import org.jenkinsci.plugins.kubernetes.auth.KubernetesAuthConfig;
+import org.jenkinsci.plugins.kubernetes.auth.KubernetesAuthException;
+import org.jenkinsci.plugins.kubernetes.auth.impl.KubernetesAuthKubeconfig;
+import org.jenkinsci.plugins.kubernetes.credentials.Utils;
 
 import javax.annotation.Nonnull;
-import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Set;
-
-import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * @author Max Laverse
@@ -34,7 +34,6 @@ import static com.google.common.collect.Sets.newHashSet;
 public class KubeConfigWriter {
     public static final String ENV_VARIABLE_NAME = "KUBECONFIG";
 
-    private static final String KUBECTL_BINARY = "kubectl";
     private static final String DEFAULT_CONTEXTNAME = "k8s";
     private static final String CLUSTERNAME = "k8s";
 
@@ -63,10 +62,46 @@ public class KubeConfigWriter {
         this.skipUseContext = skipUseContext;
     }
 
+    private static ConfigBuilder setNamedCluster(ConfigBuilder configBuilder, NamedCluster cluster) {
+        return existingOrNewCluster(configBuilder, cluster.getName())
+                .withName(cluster.getName())
+                .editOrNewClusterLike(cluster.getCluster())
+                .endCluster()
+                .endCluster();
+    }
+
+    private static ConfigBuilder setContextCluster(ConfigBuilder configBuilder, String context, String cluster) {
+        return existingOrNewContext(configBuilder, context).editOrNewContext().withCluster(cluster).endContext().endContext();
+    }
+
+    private static ConfigBuilder setContextNamespace(ConfigBuilder configBuilder, String context, String namespace) {
+        return existingOrNewContext(configBuilder, context).editOrNewContext().withNamespace(namespace).endContext().endContext();
+    }
+
+    private static ConfigBuilder setCurrentContext(ConfigBuilder configBuilder, String context) {
+        return configBuilder.withNewCurrentContext(context);
+    }
+
+    private static ConfigFluent.ContextsNested<ConfigBuilder> existingOrNewContext(ConfigBuilder configBuilder, String context) {
+        if (configBuilder.hasMatchingContext(p -> p.getName().equals(context))) {
+            return configBuilder.editMatchingContext(p -> p.getName().equals(context));
+        } else {
+            return configBuilder.addNewContext();
+        }
+    }
+
+    private static ConfigFluent.ClustersNested<ConfigBuilder> existingOrNewCluster(ConfigBuilder configBuilder, String cluster) {
+        if (configBuilder.hasMatchingCluster(p -> p.getName().equals(cluster))) {
+            return configBuilder.editMatchingCluster(p -> p.getName().equals(cluster));
+        } else {
+            return configBuilder.addNewCluster();
+        }
+    }
+
     /**
      * Write a configuration file for kubectl to disk.
      *
-     * @return path to configfile
+     * @return path to kubeconfig file
      * @throws IOException          on file operations
      * @throws InterruptedException on file operations
      */
@@ -76,357 +111,125 @@ public class KubeConfigWriter {
             workspace.mkdirs();
         }
 
-        FilePath configFile = getTempFilePath("kube", "config");
-
-        final StandardCredentials credentials = getCredentials(build);
+        // Lookup for the credentials on Jenkins
+        final StandardCredentials credentials = CredentialsProvider.findCredentialById(credentialsId, StandardCredentials.class, build, Collections.emptyList());
         if (credentials == null) {
-            throw new AbortException("No credentials defined to setup Kubernetes CLI");
-        } else if (credentials instanceof FileCredentials) {
-            setRawKubeConfig(configFile, (FileCredentials) credentials);
+            throw new AbortException("Unable to find credentials with id '" + credentialsId + "'");
+        }
 
-            if (wasContextProvided()) {
-                useContext(configFile.getRemote(), this.contextName);
-            }
+        // Convert into Kubernetes credentials
+        KubernetesAuth auth = AuthenticationTokens.convert(KubernetesAuth.class, credentials);
+        if (auth == null) {
+            throw new AbortException("Unsupported credentials type " + credentials.getClass().getName());
+        }
 
-            if (wasServerUrlProvided()) {
-                setCluster(configFile.getRemote());
-            }
+        // Build configuration
+        ConfigBuilder configBuilder;
+        try {
+            // Build an initial Kubeconfig builder from the credentials
+            KubernetesAuthConfig authConfig = new KubernetesAuthConfig(getServerUrl(), caCertificate, !wasProvided(caCertificate));
+            configBuilder = auth.buildConfigBuilder(authConfig, getContextNameOrDefault(), getClusterNameOrDefault(), credentials.getId());
 
-            if (wasClusterProvided()) {
-                setContextCluster(configFile.getRemote(), this.clusterName);
-            } else if (wasServerUrlProvided()) {
-                setContextCluster(configFile.getRemote(), getClusterNameOrDefault());
-            }
-
-            if (wasNamespaceProvided()) {
-                setContextNamespace(configFile.getRemote(), namespace);
-            }
-        } else {
-            setCluster(configFile.getRemote());
-            setCredentials(configFile.getRemote(), credentials);
-            if (wasNamespaceProvided()) {
-                setFullContext(configFile.getRemote(), credentials.getId(), namespace);
+            // Set additional values of the Kubeconfig
+            if (auth instanceof KubernetesAuthKubeconfig) {
+                configBuilder = completeKubeconfigConfigBuilder(configBuilder);
             } else {
-                setFullContext(configFile.getRemote(), credentials.getId());
+                configBuilder = completeConfigBuilder(configBuilder);
             }
-            useContext(configFile.getRemote(), getContextNameOrDefault());
+        } catch (KubernetesAuthException e) {
+            throw new AbortException(e.getMessage());
+        }
+
+        // Write configuration to disk
+        FilePath configFile = getTempKubeconfigFilePath();
+        try (Writer w = new OutputStreamWriter(new FileOutputStream(configFile.getRemote()), StandardCharsets.UTF_8)) {
+            w.write(SerializationUtils.getMapper().writeValueAsString(configBuilder.build()));
         }
 
         return configFile.getRemote();
     }
 
-    /**
-     * Set the whole kube configuration file from a FileCredentials.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void setRawKubeConfig(FilePath configFile, FileCredentials credentials) throws IOException, InterruptedException {
-        try (OutputStream output = configFile.write()) {
-            IOUtils.copy(credentials.getContent(), output);
-        }
-    }
-
-    /**
-     * Set the cluster section of the kube configuration file.
-     *
-     * @param String configFile
-     * @param String clusterName
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void setCluster(String configFile) throws IOException, InterruptedException {
-        String tlsConfigArgs;
-        Set<String> filesToBeRemoved = newHashSet();
-
-        if (caCertificate == null || caCertificate.isEmpty()) {
-            tlsConfigArgs = " --insecure-skip-tls-verify=true";
-        } else {
-            // Write certificate on disk
-            FilePath caCrtFile = getTempFilePath("cert-auth", "crt");
-            caCrtFile.write(CertificateHelper.wrapCertificate(caCertificate), null);
-            filesToBeRemoved.add(caCrtFile.getRemote());
-
-            tlsConfigArgs = " --embed-certs=true --certificate-authority=\"" + caCrtFile.getRemote()+"\"";
+    private ConfigBuilder completeConfigBuilder(ConfigBuilder configBuilder) {
+        if (wasProvided(namespace)) {
+            configBuilder = setContextNamespace(configBuilder, getContextNameOrDefault(), namespace);
         }
 
-        try {
-            String[] cmds = QuotedStringTokenizer.tokenize(String.format("%s config set-cluster %s --server=%s %s",
-                    KUBECTL_BINARY,
-                    getClusterNameOrDefault(),
-                    getServerUrl(),
-                    tlsConfigArgs));
-
-            int status = launcher.launch()
-                    .envs(String.format("KUBECONFIG=%s", configFile))
-                    .cmds(cmds)
-                    .stdout(launcher.getListener())
-                    .join();
-            if (status != 0) throw new IOException("Failed to add kubectl cluster (exit code  " + status + ")");
-        } finally {
-            for (String tempFile : filesToBeRemoved) {
-                workspace.child(tempFile).delete();
-            }
+        if (!skipUseContext) {
+            configBuilder = setCurrentContext(configBuilder, getContextNameOrDefault());
         }
+        return configBuilder;
     }
 
-    /**
-     * Set the user section of the kube configuration file.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void setCredentials(String configFile, StandardCredentials credentials) throws IOException, InterruptedException {
-        Set<String> tempFiles = newHashSet();
-
-        String credentialsArgs;
-        int sensitiveFieldsCount = 1;
-        if (credentials instanceof TokenProducer) {
-            credentialsArgs = "--token=\"" + ((TokenProducer) credentials).getToken(getServerUrl(), null, true) + "\"";
-        } else if (credentials instanceof StringCredentials) {
-            credentialsArgs = "--token=\"" + ((StringCredentials) credentials).getSecret() + "\"";
-        } else if (credentials instanceof UsernamePasswordCredentials) {
-            UsernamePasswordCredentials upc = (UsernamePasswordCredentials) credentials;
-            credentialsArgs = "--username=\"" + upc.getUsername() + "\" --password=\"" + Secret.toString(upc.getPassword()) + "\"";
-        } else if (credentials instanceof StandardCertificateCredentials) {
-            sensitiveFieldsCount = 0;
-            FilePath clientCrtFile = getTempFilePath("client", "crt");
-            FilePath clientKeyFile = getTempFilePath("client", "key");
-            CertificateHelper.extractFromCertificate((StandardCertificateCredentials) credentials, clientCrtFile, clientKeyFile);
-            tempFiles.add(clientCrtFile.getRemote());
-            tempFiles.add(clientKeyFile.getRemote());
-            credentialsArgs = "--embed-certs=true --client-certificate=\"" + clientCrtFile.getRemote() + "\" --client-key=\""
-                    + clientKeyFile.getRemote() + "\"";
-        } else {
-            throw new AbortException("Unsupported Credentials type " + credentials.getClass().getName());
+    private ConfigBuilder completeKubeconfigConfigBuilder(ConfigBuilder configBuilder) throws IOException, InterruptedException {
+        if (wasProvided(getServerUrl())) {
+            configBuilder = setNamedCluster(configBuilder, buildNamedCluster());
         }
 
-        String[] cmds = QuotedStringTokenizer.tokenize(String.format("%s config set-credentials %s %s",
-                KUBECTL_BINARY,
-                credentials.getId(),
-                credentialsArgs));
-
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmds(cmds)
-                .masks(getMasks(cmds.length, sensitiveFieldsCount))
-                .stdout(launcher.getListener())
-                .join();
-        if (status != 0) throw new IOException("Failed to add kubectl credentials (exit code  " + status + ")");
-
-        for (String tempFile : tempFiles) {
-            workspace.child(tempFile).delete();
+        String currentContext = configBuilder.getCurrentContext();
+        if (wasProvided(serverUrl) || wasProvided(clusterName)) {
+            configBuilder = setContextCluster(configBuilder, currentContext, getClusterNameOrDefault());
         }
 
-    }
-
-    /**
-     * Set the context section of the kube configuration file.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void setFullContext(String configFile, String username) throws IOException, InterruptedException {
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s",
-                        KUBECTL_BINARY,
-                        getContextNameOrDefault(),
-                        getClusterNameOrDefault(),
-                        username))
-                .stdout(launcher.getListener())
-                .join();
-        if (status != 0) throw new IOException("Failed to add kubectl context (exit code  " + status + ")");
-    }
-
-    private void setFullContext(String configFile, String username, String namespace) throws IOException, InterruptedException {
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s --user=%s --namespace=%s",
-                        KUBECTL_BINARY,
-                        getContextNameOrDefault(),
-                        getClusterNameOrDefault(),
-                        username,
-                        namespace))
-                .stdout(launcher.getListener())
-                .join();
-        if (status != 0)
-            throw new IOException("Failed to add kubectl context with namespace (exit code  " + status + ")");
-    }
-
-    /**
-     * Set the namespace of the context section in the kube configuration file.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void setContextNamespace(String configFile, String namespace) throws IOException, InterruptedException {
-        // Starting kubectl 1.12, we can use --current instead of having to determine the context we are in.
-        // To be done once we drop support for <1.12
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config set-context %s --namespace=%s",
-                        KUBECTL_BINARY,
-                        getCurrentContext(configFile),
-                        namespace))
-                .stdout(launcher.getListener())
-                .join();
-        if (status != 0) throw new IOException("Failed to set kubectl context namespace (exit code  " + status + ")");
-    }
-
-    /**
-     * Set the cluster of the context section in the kube configuration file.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void setContextCluster(String configFile, String clusterName) throws IOException, InterruptedException {
-        // Starting kubectl 1.12, we can use --current instead of having to determine the context we are in.
-        // To be done once we drop support for <1.12
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config set-context %s --cluster=%s",
-                        KUBECTL_BINARY,
-                        getCurrentContext(configFile),
-                        clusterName))
-                .stdout(launcher.getListener())
-                .join();
-        if (status != 0) throw new IOException("Failed to set kubectl context cluster (exit code  " + status + ")");
-    }
-
-    /**
-     * Get the current context of the kube configuration file.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private String getCurrentContext(String configFile) throws IOException, InterruptedException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config current-context", KUBECTL_BINARY))
-                .stdout(output)
-                .join();
-        if (status != 0) throw new IOException("Failed to get kubectl current-context (exit code  " + status + ")");
-        return output.toString("UTF-8");
-    }
-
-    /**
-     * Set the current context of the kube configuration file.
-     *
-     * @throws IOException          on file operations
-     * @throws InterruptedException on file operations
-     */
-    private void useContext(String configFile, String contextName) throws IOException, InterruptedException {
-        if (skipUseContext) {
-            return;
+        if (wasProvided(namespace)) {
+            configBuilder = setContextNamespace(configBuilder, currentContext, namespace);
         }
-        int status = launcher.launch()
-                .envs(String.format("KUBECONFIG=%s", configFile))
-                .cmdAsSingleString(String.format("%s config use-context %s",
-                        KUBECTL_BINARY,
-                        contextName))
-                .stdout(launcher.getListener())
-                .join();
 
-        if (status != 0) throw new IOException("Failed to set kubectl current context (exit code  " + status + ")");
-    }
-
-    /**
-     * Returns an array of mask to hide the last fields of a Jenkins launch command.
-     */
-    private boolean[] getMasks(int numberOfFields, int numberOfSensibleFields) {
-        boolean[] masks = new boolean[numberOfFields];
-        for (int i = 0; i < numberOfSensibleFields; i++) {
-            masks[masks.length - 1 - i] = true;
+        if (wasProvided(contextName) && !skipUseContext) {
+            configBuilder = setCurrentContext(configBuilder, contextName);
         }
-        return masks;
+
+        return configBuilder;
     }
 
-    /**
-     * Get the {@link StandardCredentials}.
-     *
-     * @return the credentials matching the {@link #credentialsId} or {@code null} is {@code #credentialsId} is blank
-     * @throws AbortException if no {@link StandardCredentials} matching {@link #credentialsId} is found
-     */
-    private StandardCredentials getCredentials(Run<?, ?> build) throws AbortException {
-        if (StringUtils.isBlank(credentialsId)) {
-            return null;
+    private NamedCluster buildNamedCluster() throws IOException, InterruptedException {
+        Cluster cluster = new Cluster();
+        cluster.setServer(getServerUrl());
+        if (wasProvided(caCertificate)) {
+            cluster.setCertificateAuthorityData(Utils.encodeBase64(Utils.wrapCertificate(caCertificate)));
         }
-        StandardCredentials result = CredentialsProvider.findCredentialById(
-                credentialsId,
-                StandardCredentials.class,
-                build,
-                Collections.<DomainRequirement>emptyList());
+        cluster.setInsecureSkipTlsVerify(!wasProvided(caCertificate));
 
-        if (result == null) {
-            throw new AbortException("No credentials found for id \"" + credentialsId + "\"");
-        }
-        return result;
+        NamedCluster namedCluster = new NamedCluster();
+        namedCluster.setCluster(cluster);
+        namedCluster.setName(getClusterNameOrDefault());
+        return namedCluster;
     }
 
     /**
-     * Return whether or not a contextName was provided
+     * Return whether a non-blank value was provided or not
      *
-     * @return true if a contextName was provided to the plugin.
+     * @return true if a value was provided to the plugin.
      */
-    private boolean wasContextProvided() {
-        return this.contextName != null && !this.contextName.isEmpty();
+    private boolean wasProvided(String value) {
+        return value != null && !value.isEmpty();
     }
 
     /**
-     * Return whether or not a clusterName was provided
-     *
-     * @return true if a clusterName was provided to the plugin.
-     */
-    private boolean wasClusterProvided() {
-        return this.clusterName != null && !this.clusterName.isEmpty();
-    }
-
-    /**
-     * Return whether or not a serverUrl was provided
-     *
-     * @return true if a serverUrl was provided to the plugin.
-     */
-    private boolean wasServerUrlProvided() {
-        return this.serverUrl != null && !this.serverUrl.isEmpty();
-    }
-
-    /**
-     * Return whether or not a namespace was provided
-     *
-     * @return true if a namespace was provided to the plugin.
-     */
-    private boolean wasNamespaceProvided() {
-        return this.namespace != null && !this.namespace.isEmpty();
-    }
-
-    /**
-     * Returns a contextName
+     * Returns contextName or its default value
      *
      * @return contextName if provided, else the default value.
      */
     private String getContextNameOrDefault() {
-        if (!wasContextProvided()) {
+        if (!wasProvided(contextName)) {
             return DEFAULT_CONTEXTNAME;
         }
-        return this.contextName;
+        return contextName;
     }
 
     /**
-     * Returns a clusterName
+     * Returns clusterName or its default value
      *
      * @return clusterName if provided, else the default value.
      */
     private String getClusterNameOrDefault() {
-        if (!wasClusterProvided()) {
+        if (!wasProvided(clusterName)) {
             return CLUSTERNAME;
         }
-        return this.clusterName;
+        return clusterName;
     }
 
     /**
-     * Returns a serverUrl with interpolated environment variables
+     * Returns serverUrl with environment variables interpolated
      *
      * @return serverUrl
      */
@@ -435,7 +238,7 @@ public class KubeConfigWriter {
         return env.expand(serverUrl);
     }
 
-    private FilePath getTempFilePath(String prefix, String suffix) throws IOException, InterruptedException {
+    private FilePath getTempKubeconfigFilePath() throws IOException, InterruptedException {
         String tempFolder = workspace.getChannel().call(new ObtainTemporaryFolderCallable());
         FilePath tempPath = new FilePath(workspace.getChannel(), tempFolder);
         if (!tempPath.exists()) {
@@ -443,7 +246,7 @@ public class KubeConfigWriter {
             tempPath.mkdirs();
         }
 
-        return tempPath.createTempFile("kubernetes-cli-plugin-"+prefix, suffix);
+        return tempPath.createTempFile("kubernetes-cli-plugin-kube", "config");
     }
 
     /**
@@ -451,6 +254,7 @@ public class KubeConfigWriter {
      */
     private static class ObtainTemporaryFolderCallable extends MasterToSlaveCallable<String, IOException> {
         private static final String TMPDIR__PROPERTY = "java.io.tmpdir";
+
         @Override
         public String call() {
             return System.getProperty(TMPDIR__PROPERTY);

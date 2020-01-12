@@ -124,17 +124,16 @@ public class KubectlTestBase {
                 "sample",
                 "file-name",
                 SecretBytes.fromBytes(("---\n" +
-                        "apiVersion: v1\n" +
+                        "apiVersion: \"v1\"\n" +
                         "clusters:\n" +
-                        "- cluster:\n" +
-                        "  name: " + clusterName + "\n" +
+                        "- name: \"" + clusterName + "\"\n" +
                         "contexts:\n" +
                         "- context:\n" +
-                        "    cluster: " + clusterName + "\n" +
-                        "  name: " + clusterName + "\n" +
-                        "- context:\n" +
-                        "  name: minikube\n" +
-                        "current-context: "+clusterName+"\n").getBytes("UTF-8")));
+                        "    cluster: \"" + clusterName + "\"\n" +
+                        "  name: \"" + clusterName + "\"\n" +
+                        "- name: \"minikube\"\n" +
+                        "current-context: \""+clusterName+"\"\n" +
+                        "users: []").getBytes("UTF-8")));
     }
 
     protected FakeBearerTokenCredentialImpl tokenCredential(String credentialId) {
