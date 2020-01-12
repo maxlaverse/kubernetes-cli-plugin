@@ -269,7 +269,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
 
-        assertEquals("apiVersion: v1\n" +
+        assertThat(configDumpContent, containsString("apiVersion: v1\n" +
                 "clusters:\n" +
                 "- cluster:\n" +
                 "    server: \"\"\n" +
@@ -290,10 +290,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "    cluster: test-sample\n" +
                 "    user: \"\"\n" +
                 "  name: test-sample\n" +
-                "current-context: test-sample\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
-                "users: []", configDumpContent);
+                "current-context: test-sample\n"));
     }
 
     @Test
@@ -359,7 +356,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
 
-        assertEquals("apiVersion: v1\n" +
+        assertThat(configDumpContent, containsString("apiVersion: v1\n" +
                 "clusters:\n" +
                 "- cluster:\n" +
                 "    insecure-skip-tls-verify: true\n" +
@@ -385,10 +382,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "    cluster: cred1234\n" +
                 "    user: \"\"\n" +
                 "  name: test-sample\n" +
-                "current-context: test-sample\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
-                "users: []", configDumpContent);
+                "current-context: test-sample\n"));
     }
 
     @Test
