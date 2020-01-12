@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.20</version>
+    <version>3.53</version>
   </parent>
 
   <groupId>org.jenkins-ci.plugins</groupId>
@@ -27,29 +27,29 @@
     </developer>
   </developers>
 
-  <url>https://wiki.jenkins.io/display/JENKINS/Kubernetes+Cli+Plugin</url>
+  <url>https://github.com/jenkinsci/kubernetes-cli-plugin</url>
 
   <properties>
     <java.level>8</java.level>
 
     <!-- dependency versions -->
     <httpclient.version>4.5.5-3.0</httpclient.version>
-    <jenkins.version>2.60.3</jenkins.version>
-    <slf4j.version>1.7.25</slf4j.version>
+    <jenkins.version>2.176.1</jenkins.version>
+    <slf4j.version>1.7.26</slf4j.version>
 
     <!-- jenkins plugins versions -->
-    <jenkins-credentials.version>2.1.19</jenkins-credentials.version>
-    <jenkins-env-inject.version>2.1.3</jenkins-env-inject.version>
-    <jenkins-plain-credentials.version>1.3</jenkins-plain-credentials.version>
+    <jenkins-credentials.version>2.2.0</jenkins-credentials.version>
+    <jenkins-env-inject.version>2.3.0</jenkins-env-inject.version>
+    <jenkins-plain-credentials.version>1.5</jenkins-plain-credentials.version>
     <jenkins-structs.version>1.19</jenkins-structs.version>
-    <jenkins-workflow-cps.version>2.29</jenkins-workflow-cps.version>
-    <jenkins-workflow-step-api.version>2.11</jenkins-workflow-step-api.version>
-    <jenkins-workflow-support.version>2.14</jenkins-workflow-support.version>
-    <jenkins-workflow-scm-step.version>2.4</jenkins-workflow-scm-step.version>
-    <jenkins-scm-api.version>2.0.7</jenkins-scm-api.version>
-    <jenkins-ssh-credentials.version>1.12</jenkins-ssh-credentials.version>
-    <jenkins-declarative.version>1.1.2</jenkins-declarative.version>
-    <jenkins-kubernetes-credentials.version>0.3.1</jenkins-kubernetes-credentials.version>
+    <jenkins-workflow-cps.version>2.46</jenkins-workflow-cps.version>
+    <jenkins-workflow-step-api.version>2.14</jenkins-workflow-step-api.version>
+    <jenkins-workflow-support.version>2.24</jenkins-workflow-support.version>
+    <jenkins-workflow-scm-step.version>2.6</jenkins-workflow-scm-step.version>
+    <jenkins-scm-api.version>2.2.6</jenkins-scm-api.version>
+    <jenkins-ssh-credentials.version>1.14</jenkins-ssh-credentials.version>
+    <jenkins-declarative.version>1.3</jenkins-declarative.version>
+    <jenkins-kubernetes-credentials.version>0.6.0</jenkins-kubernetes-credentials.version>
 
     <!-- maven plugins versions -->
     <maven-coveralls.version>4.3.0</maven-coveralls.version>
@@ -135,6 +135,16 @@
       <version>${jenkins-env-inject.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>junit</artifactId>
+      <version>1.3</version>
+      <scope>test</scope>
+    </dependency>
+      <dependency>
+          <groupId>org.jenkins-ci.plugins</groupId>
+          <artifactId>authentication-tokens</artifactId>
+      </dependency>
   </dependencies>
 
   <!-- just to fix enforcer RequireUpperBoundDeps -->
@@ -150,6 +160,22 @@
         <artifactId>ssh-credentials</artifactId>
         <version>${jenkins-ssh-credentials.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.7</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>authentication-tokens</artifactId>
+        <version>1.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>script-security</artifactId>
+        <version>1.42</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 

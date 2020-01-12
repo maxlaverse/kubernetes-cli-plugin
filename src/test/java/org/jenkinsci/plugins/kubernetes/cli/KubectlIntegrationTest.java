@@ -4,7 +4,6 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.FilePath;
-import hudson.util.IOUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -14,10 +13,7 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.nio.file.Files;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
@@ -54,8 +50,8 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("certificate-authority-data: " + encodedCertificate));
-        assertThat(configDumpContent, containsString("server: " + SERVER_URL));
+        assertThat(configDumpContent, containsString("certificate-authority-data: \"" + encodedCertificate + "\""));
+        assertThat(configDumpContent, containsString("server: \"" + SERVER_URL + "\""));
     }
 
     @Test
@@ -72,7 +68,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("name: " + CLUSTER_NAME));
+        assertThat(configDumpContent, containsString("name: \"" + CLUSTER_NAME + "\""));
     }
 
     @Test
@@ -90,7 +86,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
         assertThat(configDumpContent, containsString("insecure-skip-tls-verify: true"));
-        assertThat(configDumpContent, containsString("server: " + SERVER_URL));
+        assertThat(configDumpContent, containsString("server: \"" + SERVER_URL + "\""));
     }
 
     @Test
@@ -107,7 +103,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("namespace: test-ns"));
+        assertThat(configDumpContent, containsString("namespace: \"test-ns\""));
     }
 
     @Test
@@ -124,8 +120,8 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("username: " + USERNAME_WITH_SPACE));
-        assertThat(configDumpContent, containsString("password: " + PASSWORD_WITH_SPACE));
+        assertThat(configDumpContent, containsString("username: \"" + USERNAME_WITH_SPACE + "\""));
+        assertThat(configDumpContent, containsString("password: \"" + PASSWORD_WITH_SPACE + "\""));
     }
 
     @Test
@@ -141,9 +137,9 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("username: " + USERNAME));
-        assertThat(configDumpContent, containsString("password: " + PASSWORD));
-        assertThat(configDumpContent, containsString("current-context: test-sample"));
+        assertThat(configDumpContent, containsString("username: \"" + USERNAME + "\""));
+        assertThat(configDumpContent, containsString("password: \"" + PASSWORD + "\""));
+        assertThat(configDumpContent, containsString("current-context: \"test-sample\""));
     }
 
     @Test
@@ -160,7 +156,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("token: " + PASSWORD_WITH_SPACE));
+        assertThat(configDumpContent, containsString("token: \"" + PASSWORD_WITH_SPACE + "\""));
     }
 
     @Test
@@ -176,7 +172,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("client-certificate-data: " +
+        assertThat(configDumpContent, containsString("client-certificate-data: \"" +
                 "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNhekNDQWRRQ0NRR" +
                 "FZ0VnhhSHZxcXR6QU5CZ2txaGtpRzl3MEJBUVVGQURCNk1Rc3dDUVlEVl" +
                 "FRR0V3SkJWVEVUTUJFR0ExVUVDQk1LVTI5dFpTMVRkR0YwWlRFUU1BNEd" +
@@ -197,8 +193,8 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "1Q1dWlDck96c3cveGk5SVc0dmpGRmtKZXpNMlJxc0NHaEZvRFA0aTY0U0" +
                 "srK0NYbXJ6VVJ4UUpJYi9xeEdqRUM4SDR5QVU2dGs3YStoellYVWt4bnZ" +
                 "sK0F5OWc5WnBWR3Z5a1krbHlGNEJkdnlYZ2I5aGVBbGp3azRtdHRoNmdV" +
-                "eXdaRT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ=="));
-        assertThat(configDumpContent, containsString("client-key-data: " +
+                "eXdaRT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==\""));
+        assertThat(configDumpContent, containsString("client-key-data: \"" +
                 "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUNkUUlCQURBTkJna" +
                 "3Foa2lHOXcwQkFRRUZBQVNDQWw4d2dnSmJBZ0VBQW9HQkFMS0ViejIrbG" +
                 "pwN3dNTEZYckdhVEZ4M25HUUE0c1dsWGtLcGdqYjYrd1U3ZTdYVDFuOHF" +
@@ -219,22 +215,8 @@ public class KubectlIntegrationTest extends KubectlTestBase {
                 "k5vVUZxdTZBUEVVSVYyWDJCczhJczZoRFZNeUVlUHJUVjkveTdhTzlzTz" +
                 "FYazVuVWIzaWUrTUpRQkFrQngrNWRWTHh1UVJ3YUZVOTJsQ2syR2p5Rk9" +
                 "XN0MvMk55bFlKUldlNDd1NkRqOCt6R0NPblZFaGlNQlpJMHppbWdRWDlV" +
-                "aHVkT1NSQis5YzRYWFNFTzUKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQ=="));
+                "aHVkT1NSQis5YzRYWFNFTzUKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQ==\""));
 
-    }
-
-    @Test
-    public void testKubeConfigPathWithSpace() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "kubectl path with spaces");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlEchoKubeConfigPath.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
-
-        r.assertLogContains("kubectl configuration cleaned up", b);
-        r.assertLogContains("Using temporary file " + System.getProperty("java.io.tmpdir") + File.separator + "kubernetes-cli-plugin-kube", b);
     }
 
     @Test
@@ -250,7 +232,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertThat(configDumpContent, containsString("token: faketoken:bob:s3cr3t"));
+        assertThat(configDumpContent, containsString("token: \"faketoken:bob:s3cr3t\""));
     }
 
     @Test
@@ -377,7 +359,7 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
 
-        assertEquals( "apiVersion: v1\n" +
+        assertEquals("apiVersion: v1\n" +
                 "clusters:\n" +
                 "- cluster:\n" +
                 "    insecure-skip-tls-verify: true\n" +
@@ -422,23 +404,16 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertEquals("apiVersion: v1\n" +
+        assertEquals("---\n" +
+                "apiVersion: \"v1\"\n" +
                 "clusters:\n" +
-                "- cluster:\n" +
-                "    server: \"\"\n" +
-                "  name: test-sample\n" +
+                "- name: \"test-sample\"\n" +
                 "contexts:\n" +
                 "- context:\n" +
-                "    cluster: \"\"\n" +
-                "    user: \"\"\n" +
-                "  name: minikube\n" +
-                "- context:\n" +
-                "    cluster: test-sample\n" +
-                "    user: \"\"\n" +
-                "  name: test-sample\n" +
-                "current-context: minikube\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
+                "    cluster: \"test-sample\"\n" +
+                "  name: \"test-sample\"\n" +
+                "- name: \"minikube\"\n" +
+                "current-context: \"minikube\"\n" +
                 "users: []", configDumpContent);
     }
 
@@ -455,23 +430,16 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertEquals("apiVersion: v1\n" +
+        assertEquals("---\n" +
+                "apiVersion: \"v1\"\n" +
                 "clusters:\n" +
-                "- cluster:\n" +
-                "    server: \"\"\n" +
-                "  name: test-sample\n" +
+                "- name: \"test-sample\"\n" +
                 "contexts:\n" +
                 "- context:\n" +
-                "    cluster: \"\"\n" +
-                "    user: \"\"\n" +
-                "  name: minikube\n" +
-                "- context:\n" +
-                "    cluster: test-cluster\n" +
-                "    user: \"\"\n" +
-                "  name: test-sample\n" +
-                "current-context: test-sample\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
+                "    cluster: \"test-cluster\"\n" +
+                "  name: \"test-sample\"\n" +
+                "- name: \"minikube\"\n" +
+                "current-context: \"test-sample\"\n" +
                 "users: []", configDumpContent);
     }
 
@@ -488,27 +456,20 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertEquals("apiVersion: v1\n" +
+        assertEquals("---\n" +
+                "apiVersion: \"v1\"\n" +
                 "clusters:\n" +
+                "- name: \"test-sample\"\n" +
                 "- cluster:\n" +
                 "    insecure-skip-tls-verify: true\n" +
-                "    server: https://localhost:6443\n" +
-                "  name: k8s\n" +
-                "- cluster:\n" +
-                "    server: \"\"\n" +
-                "  name: test-sample\n" +
+                "    server: \"https://localhost:6443\"\n" +
+                "  name: \"k8s\"\n" +
                 "contexts:\n" +
                 "- context:\n" +
-                "    cluster: \"\"\n" +
-                "    user: \"\"\n" +
-                "  name: minikube\n" +
-                "- context:\n" +
-                "    cluster: k8s\n" +
-                "    user: \"\"\n" +
-                "  name: test-sample\n" +
-                "current-context: test-sample\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
+                "    cluster: \"k8s\"\n" +
+                "  name: \"test-sample\"\n" +
+                "- name: \"minikube\"\n" +
+                "current-context: \"test-sample\"\n" +
                 "users: []", configDumpContent);
     }
 
@@ -525,24 +486,17 @@ public class KubectlIntegrationTest extends KubectlTestBase {
         FilePath configDump = r.jenkins.getWorkspaceFor(p).child("configDump");
         assertTrue(configDump.exists());
         String configDumpContent = configDump.readToString().trim();
-        assertEquals("apiVersion: v1\n" +
+        assertEquals("---\n" +
+                "apiVersion: \"v1\"\n" +
                 "clusters:\n" +
-                "- cluster:\n" +
-                "    server: \"\"\n" +
-                "  name: test-sample\n" +
+                "- name: \"test-sample\"\n" +
                 "contexts:\n" +
                 "- context:\n" +
-                "    cluster: \"\"\n" +
-                "    user: \"\"\n" +
-                "  name: minikube\n" +
-                "- context:\n" +
-                "    cluster: test-sample\n" +
-                "    namespace: test-ns\n" +
-                "    user: \"\"\n" +
-                "  name: test-sample\n" +
-                "current-context: test-sample\n" +
-                "kind: Config\n" +
-                "preferences: {}\n" +
+                "    cluster: \"test-sample\"\n" +
+                "    namespace: \"test-ns\"\n" +
+                "  name: \"test-sample\"\n" +
+                "- name: \"minikube\"\n" +
+                "current-context: \"test-sample\"\n" +
                 "users: []", configDumpContent);
     }
 }

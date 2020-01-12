@@ -6,6 +6,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Result;
+import hudson.tasks.Shell;
 import hudson.util.ListBoxModel;
 import org.jenkinsci.plugins.envinject.EnvInjectBuildWrapper;
 import org.jenkinsci.plugins.envinject.EnvInjectJobPropertyInfo;
@@ -13,8 +14,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-
-import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -43,11 +42,13 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
         bw.credentialsId = CREDENTIAL_ID;
         p.getBuildWrappersList().add(bw);
 
+        Shell builder = new Shell("#!/bin/bash\nenv");
+        p.getBuildersList().add(builder);
 
         FreeStyleBuild b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
-        r.assertLogContains("KUBECONFIG=" + System.getProperty("java.io.tmpdir") + File.separator + "kubernetes-cli-plugin-kube", b);
+        r.assertLogContains("KUBECONFIG=", b);
     }
 
     @Test
@@ -69,11 +70,13 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
         bw.serverUrl = "${SERVER_URL}";
         p.getBuildWrappersList().add(bw);
 
+        Shell b2 = new Shell("#!/bin/bash\ncat $KUBECONFIG");
+        p.getBuildersList().add(b2);
 
         FreeStyleBuild b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
         r.assertBuildStatus(Result.SUCCESS, r.waitForCompletion(b));
-        r.assertLogContains("--server=http://my-server", b);
+        r.assertLogContains("server: \"http://my-server\"", b);
     }
 
     @Test
@@ -85,7 +88,6 @@ public class KubectlBuildWrapperTest extends KubectlTestBase {
         KubectlBuildWrapper bw = new KubectlBuildWrapper();
         bw.credentialsId = CREDENTIAL_ID;
         p.getBuildWrappersList().add(bw);
-
 
         FreeStyleBuild b = p.scheduleBuild2(0).waitForStart();
         assertNotNull(b);
