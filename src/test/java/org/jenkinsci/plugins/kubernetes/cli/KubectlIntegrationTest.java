@@ -220,20 +220,6 @@ public class KubectlIntegrationTest extends KubectlTestBase {
     }
 
     @Test
-    public void testKubeConfigPathWithSpace() throws Exception {
-        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), usernamePasswordCredential(CREDENTIAL_ID));
-
-        WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "kubectl path with spaces");
-        p.setDefinition(new CpsFlowDefinition(loadResource("kubectlEchoKubeConfigPath.groovy"), true));
-        WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        assertNotNull(b);
-        r.assertBuildStatusSuccess(r.waitForCompletion(b));
-
-        r.assertLogContains("kubectl configuration cleaned up", b);
-        r.assertLogContains("Using temporary file " + System.getProperty("java.io.tmpdir") + "kubernetes-cli-plugin-kube", b);
-    }
-
-    @Test
     public void testTokenProducer() throws Exception {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), tokenCredential(CREDENTIAL_ID));
 
