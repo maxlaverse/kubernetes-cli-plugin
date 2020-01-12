@@ -26,6 +26,14 @@ node {
 * An executor with `kubectl` installed (tested against [v1.10 to v1.15][travis-config] included).
 * A Kubernetes cluster.
 
+## How it works
+The plugin generates a `kubeconfig` file based on the parameters that were provided in the build.
+This file is stored in a temporary folder on the Jenkins executor and the exact path
+can be found in the `KUBECONFIG` environment variable. `kubectl` automatically picks up the path
+from this environment variable.
+Once the build is finished (or the pipeline block is exited), the temporary `kubeconfig` file is
+automatically removed.
+
 ## Supported credentials
 The following types of credentials are supported and can be used to authenticate against Kubernetes clusters:
 * Token, as secrets (see [Plain Credentials plugin][plain-credentials-plugin])
