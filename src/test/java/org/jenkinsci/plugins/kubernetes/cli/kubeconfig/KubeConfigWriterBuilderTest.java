@@ -19,13 +19,11 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-public class KubeConfigWriterTest {
+public class KubeConfigWriterBuilderTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
@@ -82,16 +80,29 @@ public class KubeConfigWriterTest {
                 false,
                 workspace, mockLauncher, build);
 
-        KubernetesAuth auth = new KubernetesAuthUsernamePassword("a-user", "a-password");
+        KubernetesAuth auth = new KubernetesAuthUsernamePassword("test-user", "test-password");
 
-        ConfigBuilder configBuilder = configWriter.getConfigBuilder("credential-id", auth);
+        ConfigBuilder configBuilder = configWriter.getConfigBuilder("test-credential", auth);
         String configDumpContent = dumpBuilder(configBuilder);
 
-        assertThat(configDumpContent, containsString("server: \"https://localhost:6443\""));
-        assertThat(configDumpContent, containsString("insecure-skip-tls-verify: true"));
-        assertThat(configDumpContent, containsString("name: \"k8s\""));
-        assertThat(configDumpContent, containsString("username: \"a-user\""));
-        assertThat(configDumpContent, containsString("password: \"a-password\""));
+        assertEquals("---\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    insecure-skip-tls-verify: true\n" +
+                "    server: \"https://localhost:6443\"\n" +
+                "  name: \"k8s\"\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"k8s\"\n" +
+                "    user: \"test-credential\"\n" +
+                "  name: \"k8s\"\n" +
+                "current-context: \"k8s\"\n" +
+                "users:\n" +
+                "- name: \"test-credential\"\n" +
+                "  user:\n" +
+                "    as-user-extra: {}\n" +
+                "    password: \"test-password\"\n" +
+                "    username: \"test-user\"\n", configDumpContent);
     }
 
     @Test
@@ -443,7 +454,7 @@ public class KubeConfigWriterTest {
     }
 
     @Test
-    public void kubeConfigWithContext() throws Exception {
+    public void kubeConfigWithNewContext() throws Exception {
         KubeConfigWriter configWriter = new KubeConfigWriter(
                 "https://localhost:6443",
                 "test-credential",
@@ -473,6 +484,45 @@ public class KubeConfigWriterTest {
                 "    namespace: \"existing-namespace\"\n" +
                 "  name: \"existing-context\"\n" +
                 "current-context: \"test-context\"\n" +
+                "users:\n" +
+                "- name: \"existing-credential\"\n" +
+                "  user:\n" +
+                "    as-user-extra: {}\n" +
+                "    password: \"existing-password\"\n" +
+                "    username: \"existing-user\"\n", configDumpContent);
+    }
+
+    @Test
+    public void kubeConfigWithExistingContext() throws Exception {
+        KubeConfigWriter configWriter = new KubeConfigWriter(
+                "https://localhost:6443",
+                "test-credential",
+                "",
+                "",
+                "existing-context",
+                "",
+                false,
+                workspace, mockLauncher, build);
+
+        KubernetesAuthKubeconfig auth = dummyKubeConfigAuth();
+        ConfigBuilder configBuilder = configWriter.getConfigBuilder("test-credential", auth);
+        String configDumpContent = dumpBuilder(configBuilder);
+
+        assertEquals("---\n" +
+                "clusters:\n" +
+                "- cluster:\n" +
+                "    server: \"https://existing-cluster\"\n" +
+                "  name: \"existing-cluster\"\n" +
+                "- cluster:\n" +
+                "    insecure-skip-tls-verify: true\n" +
+                "    server: \"https://localhost:6443\"\n" +
+                "  name: \"k8s\"\n" +
+                "contexts:\n" +
+                "- context:\n" +
+                "    cluster: \"k8s\"\n" +
+                "    namespace: \"existing-namespace\"\n" +
+                "  name: \"existing-context\"\n" +
+                "current-context: \"existing-context\"\n" +
                 "users:\n" +
                 "- name: \"existing-credential\"\n" +
                 "  user:\n" +
