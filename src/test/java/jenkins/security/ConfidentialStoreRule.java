@@ -9,7 +9,6 @@ import org.junit.rules.TemporaryFolder;
  *
  * @author Kohsuke Kawaguchi
  */
-// TODO remove this when available from the test harness
 public class ConfidentialStoreRule extends ExternalResource {
     private final TemporaryFolder tmp = new TemporaryFolder();
 

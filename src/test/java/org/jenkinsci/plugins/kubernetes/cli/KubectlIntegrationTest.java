@@ -45,7 +45,7 @@ public class KubectlIntegrationTest {
     }
 
     @Before
-    public void checkKubectlPresence() throws Exception {
+    public void checkKubectlPresence() {
         assumeTrue(kubectlPresent());
     }
 

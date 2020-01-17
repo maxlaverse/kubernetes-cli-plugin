@@ -9,7 +9,7 @@
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>kubernetes-cli</artifactId>
   <version>1.7.1-SNAPSHOT</version>
-  <name>Kubernetes Cli Plugin</name>
+  <name>Kubernetes CLI Plugin</name>
   <packaging>hpi</packaging>
 
   <scm>

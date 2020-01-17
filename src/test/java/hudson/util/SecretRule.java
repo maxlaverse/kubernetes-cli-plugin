@@ -1,9 +1,6 @@
 package hudson.util;
 
-import jenkins.security.ConfidentialStore;
-import jenkins.security.DefaultConfidentialStore;
 import org.junit.rules.ExternalResource;
-import org.junit.rules.TemporaryFolder;
 
 public class SecretRule extends ExternalResource {
     private String oldSecret;
